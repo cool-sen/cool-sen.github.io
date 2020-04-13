@@ -79,7 +79,7 @@ git submodule -b master add https://github.com/dillonzq/LoveIt.git themes/LoveIt
 
 第二种方式：下载主题的 [最新版本 .zip 文件](https://github.com/dillonzq/LoveIt/releases) 并且解压放到 `themes` 目录.特别适合在国内的我们，因为Github下载clone速度太慢了，尤其对于大文件。
 
-## 2.3 基础配置
+### 2.3 基础配置
 
 在根目录中 `config.toml` 进行配置，填写主题名称
 
