@@ -2,22 +2,22 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on Recording My Life</title>
-    <link>https://coolsenma.github.io/posts.html</link>
+    <link>https://cool-sen.github.io/posts.html</link>
     <description>Recent content in Posts on Recording My Life</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
     <copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright>
     <lastBuildDate>Mon, 13 Apr 2020 12:14:11 +0800</lastBuildDate>
     
-	<atom:link href="https://coolsenma.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://cool-sen.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Hugo</title>
-      <link>https://coolsenma.github.io/posts/hugo.html</link>
+      <link>https://cool-sen.github.io/posts/hugo.html</link>
       <pubDate>Mon, 13 Apr 2020 12:14:11 +0800</pubDate>
       
-      <guid>https://coolsenma.github.io/posts/hugo.html</guid>
+      <guid>https://cool-sen.github.io/posts/hugo.html</guid>
       <description>hugo test</description>
     </item>
     
