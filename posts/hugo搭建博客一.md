@@ -126,6 +126,10 @@ hugo server --theme=LoveIt --watch
 
 ![image-20200413232108906](/../../static/images/hugo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2%E4%B8%80/1.png)
 
+
+
+有吗？
+
 ### 2.6 构建网站
 
 在项目根目录下直接使用 `hugo` 命令，会生成 public 目录，该目录下都是关于我们的 markdown 编译完成的 html 静态页面。博客安装好之后，就该进行部署了，可以部署到自己的网站，也可以部署到Git Page。我使用的是Git Page，后面会具体介绍如何部署到Git Page。
