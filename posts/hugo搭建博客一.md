@@ -22,7 +22,6 @@ Hugo的安装方式有两种，一种是直接下载编译好的Hugo二进制文
 过程如下：
 
 ```bash
-
 wget https://github.com/gohugoio/hugo/releases/download/v0.69.0/hugo_0.69.0_Linux-64bit.deb
 dpkg -i hugo_0.69.0_Linux-64bit.deb
 ```
