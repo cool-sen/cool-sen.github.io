@@ -124,9 +124,7 @@ hugo server --theme=LoveIt --watch
 * --watch 用于实时监控变化，方便调试
 ```
 
-![预览](base_success.jpg)
-
-
+![image-20200413230439725](/images/hugo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2%E4%B8%80/image-20200413230439725.png)
 
 ### 2.6 构建网站
 
@@ -159,7 +157,7 @@ hugo server --theme=LoveIt --watch
 有以下几种方法解决。
 
 1. 可以设置uglyURLs 来解决，但是这样url就会加上.html，可以参考[博文](http://www.maitianblog.com/hugo.html)。
-2. 个人不是很喜欢，因此使用了另一种方法。建一个以文章名称命名的文件夹，里面放一个 index.md 文件，图片等文件就也放当前文章这个文件夹里面.可以参考[博文](https://www.isyin.cn/post/2018-05-03-hugo-的文件管理方案/)。
+2. 个人不是很喜欢，因此使用了另一种方法。更改Typora 设置
 3. 此外还看到过一种方法，在github上开一个repository，专门用于存放图片，然后网站引用地址。不过我没有尝试，大家有兴趣可以试下。
 
 ###  3.3 评论区的设置
