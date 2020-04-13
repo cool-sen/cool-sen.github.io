@@ -100,11 +100,9 @@ theme = "LoveIt"
 hugo new posts/first_blog.md
 ```
 
-```
 {{< admonition >}}
 默认情况下, 所有文章和页面均作为草稿创建. 如果想要渲染这些页面, 请从元数据中删除属性 `draft: true`, 或者设置属性 `draft: false`.
 {{< /admonition >}}
-```
 
 ### 2.5 在本地启动网站
 
@@ -161,7 +159,7 @@ hugo server --theme=LoveIt --watch
 有以下几种方法解决。
 
 1. 可以设置uglyURLs 来解决，但是这样url就会加上.html，可以参考[博文](http://www.maitianblog.com/hugo.html)。
-2. 个人不是很喜欢，因此使用了另一种方法。建一个以文章名称命名的文件夹，里面放一个 index.md 文件，图片等文件就也放当前文章这个文件夹里面.可以参考[博文]([https://www.isyin.cn/post/2018-05-03-hugo-%E7%9A%84%E6%96%87%E4%BB%B6%E7%AE%A1%E7%90%86%E6%96%B9%E6%A1%88/](https://www.isyin.cn/post/2018-05-03-hugo-的文件管理方案/))。
+2. 个人不是很喜欢，因此使用了另一种方法。建一个以文章名称命名的文件夹，里面放一个 index.md 文件，图片等文件就也放当前文章这个文件夹里面.可以参考[博文](https://www.isyin.cn/post/2018-05-03-hugo-的文件管理方案/)。
 3. 此外还看到过一种方法，在github上开一个repository，专门用于存放图片，然后网站引用地址。不过我没有尝试，大家有兴趣可以试下。
 
 ###  3.3 评论区的设置
