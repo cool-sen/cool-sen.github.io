@@ -2,8 +2,12 @@
     xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
     xmlns:xhtml="http://www.w3.org/1999/xhtml"
     ><url>
+            <loc>https://coolsenma.github.io/categories.html</loc><lastmod>2020-04-13T12:14:11&#43;08:00</lastmod></url><url>
+            <loc>https://coolsenma.github.io/posts/hugo.html</loc><lastmod>2020-04-13T12:14:11&#43;08:00</lastmod></url><url>
+            <loc>https://coolsenma.github.io/tags/hugo.html</loc><lastmod>2020-04-13T12:14:11&#43;08:00</lastmod></url><url>
+            <loc>https://coolsenma.github.io/posts.html</loc><lastmod>2020-04-13T12:14:11&#43;08:00</lastmod></url><url>
+            <loc>https://coolsenma.github.io/</loc><lastmod>2020-04-13T12:14:11&#43;08:00</lastmod></url><url>
+            <loc>https://coolsenma.github.io/tags.html</loc><lastmod>2020-04-13T12:14:11&#43;08:00</lastmod></url><url>
+            <loc>https://coolsenma.github.io/categories/test.html</loc><lastmod>2020-04-13T12:14:11&#43;08:00</lastmod></url><url>
             <loc>https://coolsenma.github.io/about.html</loc></url><url>
-            <loc>https://coolsenma.github.io/categories.html</loc></url><url>
-            <loc>https://coolsenma.github.io/</loc></url><url>
-            <loc>https://coolsenma.github.io/series.html</loc></url><url>
-            <loc>https://coolsenma.github.io/tags.html</loc></url></urlset>
+            <loc>https://coolsenma.github.io/series.html</loc></url></urlset>
