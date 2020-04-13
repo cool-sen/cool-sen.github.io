@@ -1,12 +1,1 @@
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-    <channel>
-        <title>Recording My Life | Recording My Life</title>
-        <link>https://cool-sen.github.io/</link>
-        <description>Recording My Life | Recording My Life</description>
-        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Mon, 13 Apr 2020 12:14:11 &#43;0800</lastBuildDate><atom:link href="https://cool-sen.github.io/" rel="self" type="application/rss+xml" /><item>
-                <title>Posts</title>
-                <link>https://cool-sen.github.io/posts.html</link>
-                <pubDate>Mon, 13 Apr 2020 12:14:11 &#43;0800</pubDate><guid>https://cool-sen.github.io/posts.html</guid>
-                <description></description>
-            </item></channel>
-</rss>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Recording My Life | Recording My Life</title><link>https://cool-sen.github.io/</link><description>Recording My Life | Recording My Life</description><generator>Hugo -- gohugo.io</generator><language>zh-CN</language><copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Mon, 13 Apr 2020 16:12:09 +0800</lastBuildDate><atom:link href="https://cool-sen.github.io/" rel="self" type="application/rss+xml"/><item><title>Posts</title><link>https://cool-sen.github.io/posts.html</link><pubDate>Mon, 13 Apr 2020 16:12:09 +0800</pubDate><guid>https://cool-sen.github.io/posts.html</guid><description/></item></channel></rss>

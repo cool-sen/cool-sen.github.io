@@ -1,6 +1,0 @@
-# Hugo
-
-hugo test
-
-
-
