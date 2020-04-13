@@ -124,11 +124,7 @@ hugo server --theme=LoveIt --watch
 * --watch 用于实时监控变化，方便调试
 ```
 
-![image-20200413234550566](/images/hugo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2%E4%B8%80/image-20200413234550566.png)
-
-
-
-有吗？
+![image-20200413235014478](/images/hugo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2%E4%B8%80/image-20200413235014478.png)
 
 ### 2.6 构建网站
 
@@ -156,12 +152,30 @@ hugo server --theme=LoveIt --watch
 
 ### 3.2 本地和站点图片路径不一致
 
-在 Typora 中编辑文章插入图片能够显示，而发布后网页中的图片不能正常显示（路径错误）。使用站点根目录（`/`）引用图片可以正常加载显示，但是无法在 Typora 编辑器中显示图片。
+在 Typora 中编辑文章插入图片能够显示，而发布后网页中的图片不能正常显示（路径错误）。或者使用站点根目录（`/`）引用图片可以正常加载显示，但是无法在 Typora 编辑器中显示图片。
 
 有以下几种方法解决。
 
 1. 可以设置uglyURLs 来解决，但是这样url就会加上.html，可以参考[博文](http://www.maitianblog.com/hugo.html)。
+
 2. 个人不是很喜欢，因此使用了另一种方法。更改Typora 设置
+
+   具体步骤:
+
+   * 将插入文档中图片默认保存在hugo的“static\images\文章名称”文件夹下
+
+     <img src="/images/hugo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2%E4%B8%80/image-20200413235848868.png" alt="image-20200413235848868" style="zoom:80%;" />
+
+   * 在博客文章中加入typora-root-url，如：
+
+     ```
+     title: "typora test"
+     draft: false
+     typora-root-url: ../../static
+     ```
+
+   * 设置图片根目录”既可以设定为绝对路径，也可以设置为相对路径，这里建议使用相对路径，便于跨系统的迁移后也能够重现结果。进行上述的设定后，任何新插入的图片默认都会保存在“static\images\文章名称”文件夹下，“Typora”会使用“static”作为根目录，在文章内使用相对于根目录的路径连接插入进来的图片。
+
 3. 此外还看到过一种方法，在github上开一个repository，专门用于存放图片，然后网站引用地址。不过我没有尝试，大家有兴趣可以试下。
 
 ###  3.3 评论区的设置
