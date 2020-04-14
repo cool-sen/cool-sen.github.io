@@ -99,11 +99,11 @@ id_rsa_hugo_deploy     (private key)
 
 这里 Secrets 变量名要一定是：  `ACTIONS_DEPLOY_KEY`, 后面会用到。
 
-#### 2.3 本地准备
+### 2.3 本地准备
 
 这一步主要是本地和仓库进行同步，假设Hugo 文章的 Repository 名字是 `myBlog`，将myBlog仓库克隆到本地，开始初始化 Hugo 系统，如果本地已经有Hugo 系统，只需要步到myBlog仓库即可。
 
-#### 2.4 编写 Github Actions 脚本
+### 2.4 编写 Github Actions 脚本
 
 通过 Github 自动为我们仓库生成，注意是为 `[你的用户名].github.io.myBlog`仓库配置 Actions。
 
@@ -145,7 +145,7 @@ jobs:
 
 修改好之后，点击右上角 commit 提交即可。以后可以本地重新commit，更加方便。
 
-#### 2.5 推送和访问
+### 2.5 推送和访问
 
 搭建就结束后，我们可以访问Github为`[你的用户名]/[你的用户名].github.io` 仓库生成的域名： `https://[你的用户名].github.io/` 查看效果。
 
