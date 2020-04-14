@@ -123,7 +123,11 @@ hugo server --theme=LoveIt --watch
 * --watch 用于实时监控变化，方便调试
 ```
 
+访问：http://localhost:1313/  
+
 ![image-20200413235014478](/images/hugo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2%E4%B8%80/image-20200413235014478.png)
+
+
 
 ### 2.6 构建网站
 
