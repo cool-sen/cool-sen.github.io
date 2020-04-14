@@ -1,4 +1,4 @@
-# Hugo搭建博客（二）—– Hugo+Github Pages搭建博客
+# Hugo搭建博客（二）— Hugo+Github Pages搭建博客
 
 
 ![image-20200414125449742](/images/hugo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2%E4%BA%8C/image-20200414125449742.png)
