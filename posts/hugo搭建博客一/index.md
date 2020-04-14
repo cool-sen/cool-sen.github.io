@@ -99,6 +99,8 @@ theme = "LoveIt"
 hugo new posts/first_blog.md
 ```
 
+**Hugo** 允许在文章内容前面添加 `yaml`, `toml` 或者 `json` 格式的前置参数。
+
 {{< admonition >}}
 默认情况下, 所有文章和页面均作为草稿创建. 如果想要渲染这些页面, 请从元数据中删除属性 `draft: true`, 或者设置属性 `draft: false`.
 {{< /admonition >}}
@@ -159,19 +161,21 @@ hugo server --theme=LoveIt --watch
 
 有以下几种方法解决。
 
-1. 可以设置uglyURLs 来解决，但是这样url就会加上.html，可以参考[博文](http://www.maitianblog.com/hugo.html)。
+1. 可以设置uglyURLs 来解决，但是这样url就会以.html结尾，可以参考[博文](http://www.maitianblog.com/hugo.html)。个人不是很喜欢，因此使用了下面这种方法。
 
-2. 个人不是很喜欢，因此使用了另一种方法。更改Typora 设置
+2. 更改Typora 设置
 
    具体步骤:
 
-   * 将插入文档中图片默认保存在hugo的“static\images\文章名称”文件夹下
+   * 设置Typora ，将插入文档中图片默认保存在hugo的“static\images\文章名称”文件夹下
 
      <img src="/images/hugo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2%E4%B8%80/image-20200413235848868.png" alt="image-20200413235848868" style="zoom:80%;" />
 
-   * 在博客文章中加入typora-root-url，如：
+     
 
-     ```
+   * 在博客文章的前置参数中加入typora-root-url，如：
+
+     ```toml
      title: "typora test"
      draft: false
      typora-root-url: ../../static
