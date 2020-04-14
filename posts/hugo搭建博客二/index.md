@@ -54,7 +54,7 @@ $ git push -u origin master -f  //强制覆盖
 
 * 创建Github Pages仓库
 
-  在你的 Github 账号里新建一个 Repository ，仓库名必须为 [你的用户名]-github.io，必须使用 master 分支，这个就是你建立 Github Pages 的 Repository.
+  在你的 Github 账号里新建一个 Repository ，仓库名必须为 username-github.io，必须使用 master 分支，这个就是你建立 Github Pages 的 Repository.
 
 * 创建Hugo文章仓库
 
@@ -85,15 +85,15 @@ id_rsa_hugo_deploy     (private key)
 
 #### 2.2.2 填写密钥
 
-假设 部署的项目为 `[你的用户名].github.io`，Hugo 文章的 Repository 名字是 `myBlog`。
+假设 部署的项目为 `username.github.io`，Hugo 文章的 Repository 名字是 `myBlog`。
 
-1. 将 **Public Key**填写到[你的用户名].github.io
+1. 将 **Public Key**填写到username.github.io
 
 ![image-20200414133132266](/images/hugo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2%E4%BA%8C/image-20200414133132266.png)
 
 红色箭头指的`Allow write access` 一定要勾上，否则会无法部署。
 
-2. 将 **Private Key** 添加到 `[你的用户名].github.io.myBlog仓库`
+2. 将 **Private Key** 添加到 `username.github.io.myBlog仓库`
 
 ![image-20200414133414017](/images/hugo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2%E4%BA%8C/image-20200414133414017.png)
 
@@ -105,7 +105,7 @@ id_rsa_hugo_deploy     (private key)
 
 ### 2.4 编写 Github Actions 脚本
 
-通过 Github 自动为我们仓库生成，注意是为 `[你的用户名].github.io.myBlog`仓库配置 Actions。
+通过 Github 自动为我们仓库生成，注意是为 `username.github.io.myBlog`仓库配置 Actions。
 
 ![image-20200414134244095](/images/hugo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2%E4%BA%8C/image-20200414134244095.png)
 
@@ -147,7 +147,7 @@ jobs:
 
 ### 2.5 推送和访问
 
-搭建就结束后，我们可以访问Github为`[你的用户名]/[你的用户名].github.io` 仓库生成的域名： `https://[你的用户名].github.io/` 查看效果。
+搭建就结束后，我们可以访问Github为`username/username.github.io` 仓库生成的域名： `https://username.github.io/` 查看效果。
 
 之后每次写完博客，直接在本地仓库push就可以访问了。也可以写个脚本，直接一键push。如：
 
