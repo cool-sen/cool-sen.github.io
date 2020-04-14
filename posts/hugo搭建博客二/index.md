@@ -145,7 +145,7 @@ jobs:
 
 修改好之后，点击右上角 commit 提交即可。以后可以本地重新commit，更加方便。
 
-#### 2.5 测试访问
+#### 2.5 推送和访问
 
 搭建就结束后，我们可以访问Github为`[你的用户名]/[你的用户名].github.io` 仓库生成的域名： `https://[你的用户名].github.io/` 查看效果。
 
@@ -162,3 +162,7 @@ git add -A
 git commit -m "$msg"
 git push origin master
 ```
+
+执行上面的代码后，Github 收到PUSH后Actions 就会自动开始构建了，等待结束大约1分钟不到即可打开网站域名。
+
+快点试试吧...
