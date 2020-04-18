@@ -1,0 +1,284 @@
+<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta http-equiv=x-ua-compatible content="IE=edge, chrome=1"><title>IOC XMLBeanDefinitionReader | Recording</title><meta name=Description content="recording my life"><meta property="og:title" content="IOC XMLBeanDefinitionReader"><meta property="og:description" content="前言 1. Resource资源定位 Spring的配置文件读取是通过ClassPathResource进行封装的，如new ClassPathResource (&#34;bean"><meta property="og:type" content="article"><meta property="og:url" content="https://cool-sen.github.io/posts/ioc-xmlbeandefinitionreader/"><meta property="article:published_time" content="2020-04-18T18:34:57+08:00"><meta property="article:modified_time" content="2020-04-18T18:34:57+08:00"><meta name=twitter:card content="summary"><meta name=twitter:title content="IOC XMLBeanDefinitionReader"><meta name=twitter:description content="前言 1. Resource资源定位 Spring的配置文件读取是通过ClassPathResource进行封装的，如new ClassPathResource (&#34;bean"><meta name=theme-color content="#ffffff"><meta name=msapplication-TileColor content="#da532c"><link rel=canonical href=https://cool-sen.github.io/posts/ioc-xmlbeandefinitionreader/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><link rel=prev href=https://cool-sen.github.io/posts/spring-build-debugging-environment/><link href=https://cdn.staticfile.org/font-awesome/5.12.1/css/all.min.css rel=stylesheet><link href=https://cdn.staticfile.org/animate.css/3.7.2/animate.css rel=stylesheet><link rel=stylesheet href=/css/style.min.css><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"IOC XMLBeanDefinitionReader","inLanguage":"zh-CN","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/cool-sen.github.io\/posts\/ioc-xmlbeandefinitionreader\/"},"image":{"@type":"ImageObject","url":"https:\/\/cool-sen.github.io\/","width":800,"height":600},"genre":"posts","keywords":"Spring, IOC","wordcount":2087,"url":"https:\/\/cool-sen.github.io\/posts\/ioc-xmlbeandefinitionreader\/","datePublished":"2020-04-18","dateModified":"2020-04-18","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"ZhaoQiang","logo":{"@type":"ImageObject","url":"https:\/\/cool-sen.github.io\/","width":127,"height":40}},"author":{"@type":"Person","name":"shuaisenma"},"description":""}</script></head><body><script>if(!window.localStorage||!window.localStorage.getItem('theme')){window.isDark=window.matchMedia('(prefers-color-scheme: dark)').matches;}else{window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';}
+window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><header class=desktop id=header-desktop><div class=header-wrapper><div class=header-title><a href=/>Recording</a></div><div class=menu><a class=menu-item href=/posts rel="noopener noreffer">文章</a><a class=menu-item href=/tags rel="noopener noreffer">标签</a><a class=menu-item href=/categories rel="noopener noreffer">分类</a><a class=menu-item href=/about rel="noopener noreffer">关于</a><span class=menu-item>|</span>
+<a href=javascript:void(0); class="menu-item theme-switch" title=切换主题><i class="fas fa-adjust fa-fw"></i></a></div></div></header><header class=mobile id=header-mobile><div class=header-wrapper><div class=header-container><div class=header-title><a href=/>Recording</a></div><div class=menu-toggle id=menu-toggle-mobile><span></span><span></span><span></span></div></div><div class=menu id=menu-mobile><a class=menu-item href=/posts rel="noopener noreffer">文章</a><a class=menu-item href=/tags rel="noopener noreffer">标签</a><a class=menu-item href=/categories rel="noopener noreffer">分类</a><a class=menu-item href=/about rel="noopener noreffer">关于</a><a href=javascript:void(0); class="menu-item theme-switch" title=切换主题>
+<i class="fas fa-adjust fa-fw"></i></a></div></div></header><script>window.desktopHeaderMode="fixed";window.mobileHeaderMode="auto";</script><main class=main><div class=container><article class="page single"><h1 class="single-title animated flipInX">IOC XMLBeanDefinitionReader</h1><div class=post-meta><div class=post-meta-line><span class=post-author><a href=/ title=Author rel="noopener noreffer author" class=author><i class="fas fa-user-circle fa-fw"></i>shuaisenma</a>
+</span>&nbsp;
+<span class=post-category>收录于<a href=/categories/spring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90>
+<i class="far fa-folder fa-fw"></i>Spring源码分析</a></span></div><div class=post-meta-line><i class="far fa-calendar-alt fa-fw"></i><time datetime=2020-04-18>2020-04-18</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>约 2087 字&nbsp;
+<i class="far fa-clock fa-fw"></i>预计阅读 5 分钟&nbsp;<span id=/posts/ioc-xmlbeandefinitionreader/ class=leancloud_visitors data-flag-title="IOC XMLBeanDefinitionReader">
+<i class="far fa-eye fa-fw"></i><span class=leancloud-visitors-count></span>&nbsp;次阅读
+</span>&nbsp;</div></div><div class=toc id=toc-auto><h2 class=toc-title>目录</h2><div class="toc-content always-active" id=toc-content-auto></div></div><div class=toc id=toc-static><details><summary><div class=toc-title><span>目录</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=toc-content id=toc-content-static><nav id=TableOfContents><ul><li><a href=#前言>前言</a></li><li><a href=#1-resource资源定位>1. Resource资源定位</a><ul><li><a href=#12-举例>1.2 举例</a></li></ul></li><li><a href=#2-xmlbeandefinitionreader>2 XmlBeanDefinitionReader</a></li></ul></nav></div></details></div><div class=content id=content><h2 id=前言>前言</h2><h2 id=1-resource资源定位>1. Resource资源定位</h2><p>Spring的配置文件读取是通过ClassPathResource进行封装的，如<code>new ClassPathResource ("beanFactoryTest.xml")</code>。</p><p>JavaSE中有个标准类 <code>java.net.URL</code>，Spring为何选择自造轮子？</p><p>在JavaSE中有个标准类 <code>java.net.URL</code>，该类为资源定位器（Uniform Resource Locator）。具体过程为：将不同来源的资源抽象成URL，通过注册不同的handler（URLStreamHandler）来处理不同来源的资源的读取逻辑，一般handler的类型使用不同前缀（协议，Protocol）来识别，如“file:”“http:”“jar:”等。但是URL没有默认定义相对Classpath或ServletContext等资源的handler，虽然可以注册自己的URLStreamHandler来解析特定的URL前缀（协议），比如“classpath:”，但URL没有提供基本的方法。</p><p><code>java.net.URL</code> 的局限性迫使 Spring 必须实现自己的资源加载策略：Resource接口封装底层资源。</p><p>Resource接口代码如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=kd>public</span> <span class=kd>interface</span> <span class=nc>Resource</span> <span class=kd>extends</span> <span class=n>InputStreamSource</span> <span class=o>{</span>
+	
+	<span class=c1>//资源是否存在，存在性
+</span><span class=c1></span>	<span class=kt>boolean</span> <span class=nf>exists</span><span class=o>();</span>
+    
+    <span class=c1>//资源是否可读，可读性
+</span><span class=c1></span>	<span class=k>default</span> <span class=kt>boolean</span> <span class=nf>isReadable</span><span class=o>()</span> <span class=o>{</span>
+		<span class=k>return</span> <span class=kc>true</span><span class=o>;</span>
+	<span class=o>}</span>
+
+	<span class=c1>//资源所代表的句柄是否被一个 stream 打开了，打开状态
+</span><span class=c1></span>	<span class=k>default</span> <span class=kt>boolean</span> <span class=nf>isOpen</span><span class=o>()</span> <span class=o>{</span>
+		<span class=k>return</span> <span class=kc>false</span><span class=o>;</span>
+	<span class=o>}</span>
+
+	<span class=c1>//是否为 File
+</span><span class=c1></span>	<span class=k>default</span> <span class=kt>boolean</span> <span class=nf>isFile</span><span class=o>()</span> <span class=o>{</span>
+		<span class=k>return</span> <span class=kc>false</span><span class=o>;</span>
+	<span class=o>}</span>
+
+	<span class=c1>//返回资源的 URL 的句柄
+</span><span class=c1></span>	<span class=n>URL</span> <span class=nf>getURL</span><span class=o>()</span> <span class=kd>throws</span> <span class=n>IOException</span><span class=o>;</span>
+
+	<span class=c1>//返回资源的 URI 的句柄
+</span><span class=c1></span>	<span class=n>URI</span> <span class=nf>getURI</span><span class=o>()</span> <span class=kd>throws</span> <span class=n>IOException</span><span class=o>;</span>
+
+	<span class=c1>//返回资源的 File 的句柄
+</span><span class=c1></span>	<span class=n>File</span> <span class=nf>getFile</span><span class=o>()</span> <span class=kd>throws</span> <span class=n>IOException</span><span class=o>;</span>
+
+	<span class=c1>//返回 ReadableByteChannel
+</span><span class=c1></span>	<span class=k>default</span> <span class=n>ReadableByteChannel</span> <span class=nf>readableChannel</span><span class=o>()</span> <span class=kd>throws</span> <span class=n>IOException</span> <span class=o>{</span>
+		<span class=k>return</span> <span class=n>java</span><span class=o>.</span><span class=na>nio</span><span class=o>.</span><span class=na>channels</span><span class=o>.</span><span class=na>Channels</span><span class=o>.</span><span class=na>newChannel</span><span class=o>(</span><span class=n>getInputStream</span><span class=o>());</span>
+	<span class=o>}</span>
+
+	<span class=c1>//资源内容的长度
+</span><span class=c1></span>	<span class=kt>long</span> <span class=nf>contentLength</span><span class=o>()</span> <span class=kd>throws</span> <span class=n>IOException</span><span class=o>;</span>
+
+	<span class=c1>//资源最后的修改时间
+</span><span class=c1></span>	<span class=kt>long</span> <span class=nf>lastModified</span><span class=o>()</span> <span class=kd>throws</span> <span class=n>IOException</span><span class=o>;</span>
+
+	<span class=c1>//根据当前资源创建一个相对资源
+</span><span class=c1></span>	<span class=n>Resource</span> <span class=nf>createRelative</span><span class=o>(</span><span class=n>String</span> <span class=n>relativePath</span><span class=o>)</span> <span class=kd>throws</span> <span class=n>IOException</span><span class=o>;</span>
+
+	<span class=c1>//资源的文件名
+</span><span class=c1></span>	<span class=nd>@Nullable</span>
+	<span class=n>String</span> <span class=nf>getFilename</span><span class=o>();</span>
+
+	<span class=c1>//资源的描述，可在错误处理中详细地打印出错的资源文件
+</span><span class=c1></span>	<span class=n>String</span> <span class=nf>getDescription</span><span class=o>();</span>
+
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><p>资源文件相关类图如下：</p><p><img class=lazyload src=/svg/loading.small.min.svg data-sizes=auto data-srcset="/images/IOC-XMLBeanDefinitionReader/image-20200418213207280.png,  1.5x,  2x" data-src alt=资源文件处理相关类图 title=资源文件处理相关类图></p><center>资源文件处理相关类图</center><ul><li>FileSystemResource ：对 <code>java.io.File</code> 类型资源的封装，只要是跟 File 打交道的，基本上与 FileSystemResource 也可以打交道。支持文件和 URL 的形式，实现 WritableResource 接口，且从 Spring Framework 5.0 开始，FileSystemResource 使用 NIO2 API进行读/写交互。</li><li>ClassPathResource ：class path 类型资源的实现。使用给定的 ClassLoader 或者给定的 Class 来加载资源。</li><li>UrlResource ：对 <code>java.net.URL</code>类型资源的封装。内部委派 URL 进行具体的资源操作。</li><li>InputStreamResource ：将给定的 InputStream 作为一种资源的 Resource 的实现类。</li><li>ByteArrayResource ：对字节数组提供的数据的封装。如果通过 InputStream 形式访问该类型的资源，该实现会根据字节数组的数据构造一个相应的 ByteArrayInputStream。</li></ul><h3 id=12-举例>1.2 举例</h3><p>如加载文件使用以下代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=n>Resource</span> <span class=n>resource</span><span class=o>=</span><span class=k>new</span> <span class=n>ClassPathResource</span><span class=o>(</span><span class=s>&#34;beanFactoryTest.xml&#34;</span><span class=o>);</span>
+<span class=n>InputStream</span> <span class=n>inputStream</span><span class=o>=</span><span class=n>resource</span><span class=o>.</span><span class=na>getInputStream</span><span class=o>();</span>
+</code></pre></td></tr></table></div></div><p>Resource接口对所有的资源文件进行统一处理。</p><p>ClassPathResource中的getInputStream，是通过class或者classLoader提供的底层方法进行调用。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=k>if</span> <span class=o>(</span><span class=k>this</span><span class=o>.</span><span class=na>clazz</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+			<span class=n>is</span> <span class=o>=</span> <span class=k>this</span><span class=o>.</span><span class=na>clazz</span><span class=o>.</span><span class=na>getResourceAsStream</span><span class=o>(</span><span class=k>this</span><span class=o>.</span><span class=na>path</span><span class=o>);</span>
+		<span class=o>}</span>
+		<span class=k>else</span> <span class=k>if</span> <span class=o>(</span><span class=k>this</span><span class=o>.</span><span class=na>classLoader</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+			<span class=n>is</span> <span class=o>=</span> <span class=k>this</span><span class=o>.</span><span class=na>classLoader</span><span class=o>.</span><span class=na>getResourceAsStream</span><span class=o>(</span><span class=k>this</span><span class=o>.</span><span class=na>path</span><span class=o>);</span>
+		<span class=o>}</span>
+		<span class=k>else</span> <span class=o>{</span>
+			<span class=n>is</span> <span class=o>=</span> <span class=n>ClassLoader</span><span class=o>.</span><span class=na>getSystemResourceAsStream</span><span class=o>(</span><span class=k>this</span><span class=o>.</span><span class=na>path</span><span class=o>);</span>
+		<span class=o>}</span>
+</code></pre></td></tr></table></div></div><p>先通过Resource相关类对配置文件进行封装和读取，之后交给XmlBeanDefinitionReader处理。</p><h2 id=2-xmlbeandefinitionreader>2 XmlBeanDefinitionReader</h2><p>1．封装资源文件。当进入XmlBeanDefinitionReader后，首先对参数Resource使用EncodedResource类进行封装。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=kd>public</span> <span class=kt>int</span> <span class=nf>loadBeanDefinitions</span><span class=o>(</span><span class=n>Resource</span> <span class=n>resource</span><span class=o>)</span> <span class=kd>throws</span> <span class=n>BeanDefinitionStoreException</span> <span class=o>{</span>
+		<span class=k>return</span> <span class=n>loadBeanDefinitions</span><span class=o>(</span><span class=k>new</span> <span class=n>EncodedResource</span><span class=o>(</span><span class=n>resource</span><span class=o>));</span>
+	<span class=o>}</span>
+</code></pre></td></tr></table></div></div><p>2．获取输入流。从Resource中获取对应的InputStream并构造InputSource。</p><p>转入可复用方法<code>loadBeanDefinitions(EncodedResource encodedResource) </code>。重点为调用函数<code>doLoadBeanDefinitions(inputSource, encodedResource.getResource())</code></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=kd>public</span> <span class=kt>int</span> <span class=nf>loadBeanDefinitions</span><span class=o>(</span><span class=n>EncodedResource</span> <span class=n>encodedResource</span><span class=o>)</span> <span class=kd>throws</span> <span class=n>BeanDefinitionStoreException</span> <span class=o>{</span>
+		<span class=n>Assert</span><span class=o>.</span><span class=na>notNull</span><span class=o>(</span><span class=n>encodedResource</span><span class=o>,</span> <span class=s>&#34;EncodedResource must not be null&#34;</span><span class=o>);</span>
+		<span class=k>if</span> <span class=o>(</span><span class=n>logger</span><span class=o>.</span><span class=na>isTraceEnabled</span><span class=o>())</span> <span class=o>{</span>
+			<span class=n>logger</span><span class=o>.</span><span class=na>trace</span><span class=o>(</span><span class=s>&#34;Loading XML bean definitions from &#34;</span> <span class=o>+</span> <span class=n>encodedResource</span><span class=o>);</span>
+		<span class=o>}</span>
+		<span class=c1>//通过属性记录已经加载的资源
+</span><span class=c1></span>		<span class=n>Set</span><span class=o>&lt;</span><span class=n>EncodedResource</span><span class=o>&gt;</span> <span class=n>currentResources</span> <span class=o>=</span> <span class=k>this</span><span class=o>.</span><span class=na>resourcesCurrentlyBeingLoaded</span><span class=o>.</span><span class=na>get</span><span class=o>();</span>
+
+		<span class=k>if</span> <span class=o>(!</span><span class=n>currentResources</span><span class=o>.</span><span class=na>add</span><span class=o>(</span><span class=n>encodedResource</span><span class=o>))</span> <span class=o>{</span>
+			<span class=k>throw</span> <span class=k>new</span> <span class=n>BeanDefinitionStoreException</span><span class=o>(</span>
+					<span class=s>&#34;Detected cyclic loading of &#34;</span> <span class=o>+</span> <span class=n>encodedResource</span> <span class=o>+</span> <span class=s>&#34; - check your import definitions!&#34;</span><span class=o>);</span>
+		<span class=o>}</span>
+		<span class=c1>//从encodedResource中获取已经封装的Resource对象,并再次从Resource中获取其中的inputStream
+</span><span class=c1></span>		<span class=k>try</span> <span class=o>(</span><span class=n>InputStream</span> <span class=n>inputStream</span> <span class=o>=</span> <span class=n>encodedResource</span><span class=o>.</span><span class=na>getResource</span><span class=o>().</span><span class=na>getInputStream</span><span class=o>())</span> <span class=o>{</span>
+			<span class=c1>//注意：InputSource这个类并不来自于Spring，它的全路径是org.xml.sax.InputSource
+</span><span class=c1></span>			<span class=n>InputSource</span> <span class=n>inputSource</span> <span class=o>=</span> <span class=k>new</span> <span class=n>InputSource</span><span class=o>(</span><span class=n>inputStream</span><span class=o>);</span>
+			<span class=k>if</span> <span class=o>(</span><span class=n>encodedResource</span><span class=o>.</span><span class=na>getEncoding</span><span class=o>()</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+				<span class=n>inputSource</span><span class=o>.</span><span class=na>setEncoding</span><span class=o>(</span><span class=n>encodedResource</span><span class=o>.</span><span class=na>getEncoding</span><span class=o>());</span>
+			<span class=o>}</span>
+			<span class=c1>//**真正的核心部分**
+</span><span class=c1></span>			<span class=k>return</span> <span class=n>doLoadBeanDefinitions</span><span class=o>(</span><span class=n>inputSource</span><span class=o>,</span> <span class=n>encodedResource</span><span class=o>.</span><span class=na>getResource</span><span class=o>());</span>
+		<span class=o>}</span>
+		<span class=k>catch</span> <span class=o>(</span><span class=n>IOException</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+			<span class=k>throw</span> <span class=k>new</span> <span class=n>BeanDefinitionStoreException</span><span class=o>(</span>
+					<span class=s>&#34;IOException parsing XML document from &#34;</span> <span class=o>+</span> <span class=n>encodedResource</span><span class=o>.</span><span class=na>getResource</span><span class=o>(),</span> <span class=n>ex</span><span class=o>);</span>
+		<span class=o>}</span>
+		<span class=k>finally</span> <span class=o>{</span>
+			<span class=n>currentResources</span><span class=o>.</span><span class=na>remove</span><span class=o>(</span><span class=n>encodedResource</span><span class=o>);</span>
+			<span class=k>if</span> <span class=o>(</span><span class=n>currentResources</span><span class=o>.</span><span class=na>isEmpty</span><span class=o>())</span> <span class=o>{</span>
+				<span class=k>this</span><span class=o>.</span><span class=na>resourcesCurrentlyBeingLoaded</span><span class=o>.</span><span class=na>remove</span><span class=o>();</span>
+			<span class=o>}</span>
+		<span class=o>}</span>
+	<span class=o>}</span>
+</code></pre></td></tr></table></div></div><ol start=3><li><p>doLoadBeanDefinitions 主要做了三件事。</p><ul><li>获取对XML文件的验证模式。</li><li>加载XML文件，并得到对应的Document。</li><li>根据返回的Document注册Bean信息。</li></ul><p>代码如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=kd>protected</span> <span class=kt>int</span> <span class=nf>doLoadBeanDefinitions</span><span class=o>(</span><span class=n>InputSource</span> <span class=n>inputSource</span><span class=o>,</span> <span class=n>Resource</span> <span class=n>resource</span><span class=o>)</span>
+         <span class=kd>throws</span> <span class=n>BeanDefinitionStoreException</span> <span class=o>{</span>
+   
+     <span class=k>try</span> <span class=o>{</span>
+         <span class=c1>//1. doLoadDocument 中有getValidationModeForResource获取XML文件的验证模式
+</span><span class=c1></span>         <span class=c1>//2. doLoadDocument 得到对应的Document
+</span><span class=c1></span>         <span class=n>Document</span> <span class=n>doc</span> <span class=o>=</span> <span class=n>doLoadDocument</span><span class=o>(</span><span class=n>inputSource</span><span class=o>,</span> <span class=n>resource</span><span class=o>);</span>
+         <span class=c1>//3. 根据 Document 实例，注册 Bean 信息
+</span><span class=c1></span>         <span class=kt>int</span> <span class=n>count</span> <span class=o>=</span> <span class=n>registerBeanDefinitions</span><span class=o>(</span><span class=n>doc</span><span class=o>,</span> <span class=n>resource</span><span class=o>);</span>
+         <span class=k>if</span> <span class=o>(</span><span class=n>logger</span><span class=o>.</span><span class=na>isDebugEnabled</span><span class=o>())</span> <span class=o>{</span>
+             <span class=n>logger</span><span class=o>.</span><span class=na>debug</span><span class=o>(</span><span class=s>&#34;Loaded &#34;</span> <span class=o>+</span> <span class=n>count</span> <span class=o>+</span> <span class=s>&#34; bean definitions from &#34;</span> <span class=o>+</span> <span class=n>resource</span><span class=o>);</span>
+         <span class=o>}</span>
+         <span class=k>return</span> <span class=n>count</span><span class=o>;</span>
+     <span class=o>}</span>
+     <span class=k>catch</span> <span class=o>(</span><span class=n>BeanDefinitionStoreException</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+         <span class=k>throw</span> <span class=n>ex</span><span class=o>;</span>
+     <span class=o>}</span>
+     <span class=k>catch</span> <span class=o>(</span><span class=n>SAXParseException</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+         <span class=k>throw</span> <span class=k>new</span> <span class=n>XmlBeanDefinitionStoreException</span><span class=o>(</span><span class=n>resource</span><span class=o>.</span><span class=na>getDescription</span><span class=o>(),</span>
+                 <span class=s>&#34;Line &#34;</span> <span class=o>+</span> <span class=n>ex</span><span class=o>.</span><span class=na>getLineNumber</span><span class=o>()</span> <span class=o>+</span> <span class=s>&#34; in XML document from &#34;</span> <span class=o>+</span> <span class=n>resource</span> <span class=o>+</span> <span class=s>&#34; is invalid&#34;</span><span class=o>,</span> <span class=n>ex</span><span class=o>);</span>
+     <span class=o>}</span>
+     <span class=k>catch</span> <span class=o>(</span><span class=n>SAXException</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+         <span class=k>throw</span> <span class=k>new</span> <span class=n>XmlBeanDefinitionStoreException</span><span class=o>(</span><span class=n>resource</span><span class=o>.</span><span class=na>getDescription</span><span class=o>(),</span>
+                 <span class=s>&#34;XML document from &#34;</span> <span class=o>+</span> <span class=n>resource</span> <span class=o>+</span> <span class=s>&#34; is invalid&#34;</span><span class=o>,</span> <span class=n>ex</span><span class=o>);</span>
+     <span class=o>}</span>
+     <span class=k>catch</span> <span class=o>(</span><span class=n>ParserConfigurationException</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+         <span class=k>throw</span> <span class=k>new</span> <span class=n>BeanDefinitionStoreException</span><span class=o>(</span><span class=n>resource</span><span class=o>.</span><span class=na>getDescription</span><span class=o>(),</span>
+                 <span class=s>&#34;Parser configuration exception parsing XML from &#34;</span> <span class=o>+</span> <span class=n>resource</span><span class=o>,</span> <span class=n>ex</span><span class=o>);</span>
+     <span class=o>}</span>
+     <span class=k>catch</span> <span class=o>(</span><span class=n>IOException</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+         <span class=k>throw</span> <span class=k>new</span> <span class=n>BeanDefinitionStoreException</span><span class=o>(</span><span class=n>resource</span><span class=o>.</span><span class=na>getDescription</span><span class=o>(),</span>
+                 <span class=s>&#34;IOException parsing XML document from &#34;</span> <span class=o>+</span> <span class=n>resource</span><span class=o>,</span> <span class=n>ex</span><span class=o>);</span>
+     <span class=o>}</span>
+     <span class=k>catch</span> <span class=o>(</span><span class=n>Throwable</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+         <span class=k>throw</span> <span class=k>new</span> <span class=n>BeanDefinitionStoreException</span><span class=o>(</span><span class=n>resource</span><span class=o>.</span><span class=na>getDescription</span><span class=o>(),</span>
+                 <span class=s>&#34;Unexpected exception parsing XML document from &#34;</span> <span class=o>+</span> <span class=n>resource</span><span class=o>,</span> <span class=n>ex</span><span class=o>);</span>
+     <span class=o>}</span>
+ <span class=o>}</span>
+</code></pre></td></tr></table></div></div></li></ol></div><div class=post-footer id=post-footer><div class=post-info><div class=post-info-line><div class=post-info-mod><span>本文于 2020-04-18 更新</span></div><div class=post-info-license></div></div><div class=post-info-line><div class=post-info-md><span><a class=link-to-markdown href=/posts/ioc-xmlbeandefinitionreader/index.md target=_blank>阅读原始文档</a></span></div><div class=post-info-share><span><a href=javascript:void(0); title="分享到 微博" data-sharer=weibo data-url=https://cool-sen.github.io/posts/ioc-xmlbeandefinitionreader/ data-title="IOC XMLBeanDefinitionReader"><i class="fab fa-weibo fa-fw"></i></a><a href=javascript:void(0); title="分享到 百度" data-sharer=baidu data-url=https://cool-sen.github.io/posts/ioc-xmlbeandefinitionreader/ data-title="IOC XMLBeanDefinitionReader"><i class="loveit it-baidu-fill"></i></a><a href=javascript:void(0); title="分享到 Evernote" data-sharer=evernote data-url=https://cool-sen.github.io/posts/ioc-xmlbeandefinitionreader/ data-title="IOC XMLBeanDefinitionReader"><i class="fab fa-evernote fa-fw"></i></a></span></div></div></div><div class=post-info-more><section><i class="fas fa-tags fa-fw"></i>&nbsp;<a href=/tags/spring>Spring</a>,&nbsp;<a href=/tags/ioc>IOC</a></section><section><span><a href=javascript:window.history.back();>返回</a></span>&nbsp;|&nbsp;<span><a href=/>主页</a></span></section></div><div class=post-nav><a href=/posts/spring-build-debugging-environment/ class=prev rel=prev title=IDEA编译Spring源码><i class="fas fa-angle-left fa-fw"></i>IDEA编译Spring源码</a></div></div><div class=comment><div id=valine></div><script>document.addEventListener("DOMContentLoaded",function(event){new Valine({el:'#valine',appId:'EVeKQGJoyzwUXAUhbwnrWRef-gzGzoHsz',appKey:'YMah0NIRauENVCUV8o5vhPMN',placeholder:'说点什么吧...',verify:true,avatar:'mm',pageSize:10,lang:'en',visitor:true,recordIP:true,});});</script><noscript>Please enable JavaScript to view the <a href=https://valine.js.org/>comments powered by Valine.</a></noscript></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line>由 <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> 强力驱动 | 主题 - <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer"><i class="far fa-heart fa-fw"></i>LoveIt</a></div><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2019 - 2020</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=/ target=_blank>shuaisenma</a></span>&nbsp;|&nbsp;<span class=license><a rel="license external nofollow noopener noreffer" href=https://creativecommons.org/licenses/by-nc/4.0/ target=_blank>CC BY-NC 4.0</a></span></div></div></footer></div><a href=# class="dynamic-to-top animated faster" id=dynamic-to-top><i class="fas fa-chevron-up fa-fw"></i></a><script>document.addEventListener('DOMContentLoaded',function(){lightGallery(document.getElementById('content'),{selector:'.lightgallery',speed:400,hideBarsDelay:2000,thumbnail:true,exThumbImage:'data-thumbnail',thumbWidth:80,thumbContHeight:80,});});</script><link rel=stylesheet href=/lib/valine/valine.css><link rel=stylesheet href=/lib/iconfont/iconfont.min.css><link rel=stylesheet href=/lib/lightgallery/lightgallery.min.css><script src=https://cdn.staticfile.org/valine/1.3.10/Valine.min.js></script><script src=https://cdn.staticfile.org/smooth-scroll/16.1.0/smooth-scroll.polyfills.min.js></script><script src=https://cdn.staticfile.org/lazysizes/5.2.0/lazysizes.min.js></script><script src=/lib/sharer/sharer.min.js></script><script src=/lib/lightgallery/lightgallery.min.js></script><script src=/lib/lightgallery/lg-thumbnail.min.js></script><script src=/lib/lightgallery/lg-zoom.min.js></script><script src=/js/theme.min.js></script><script type=application/javascript>var doNotTrack=false;if(!doNotTrack){window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;ga('create','UA-105751499-1','auto');ga('set','anonymizeIp',true);ga('send','pageview');}</script><script async src=https://www.google-analytics.com/analytics.js></script></body></html>
