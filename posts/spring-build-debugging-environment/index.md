@@ -125,4 +125,6 @@ buildscript {
 
 调试 org.springframework.beans.factory.xml.XmlBeanDefinitionReaderTests 的 withFreshInputStream() 方法
 
-IDEA能够正确编译Spring源码了，开始正式学习Spring源码了！
+## 总结
+
+IDEA能够正确编译Spring源码了，开始愉快的学习Spring源码了！
