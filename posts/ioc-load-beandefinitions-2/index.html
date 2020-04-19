@@ -166,7 +166,7 @@ window.isDark&&document.body.classList.add('dark-theme');</script><div class=wra
 </span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>//BeanDefinitionParserDelegate.java
 </span><span class=c1></span>
 <span class=nd>@Nullable</span>
-	<span class=kd>public</span> <span class=n>BeanDefinitionHolder</span> <span class=nf>parseBeanDefinitionElement</span><span class=o>(</span><span class=n>Element</span> <span class=n>ele</span><span class=o>,</span> <span class=nd>@Nullable</span> <span class=n>BeanDefinition</span> <span class=n>containingBean</span><span class=o>)</span> <span class=o>{</span>
+<span class=kd>public</span> <span class=n>BeanDefinitionHolder</span> <span class=nf>parseBeanDefinitionElement</span><span class=o>(</span><span class=n>Element</span> <span class=n>ele</span><span class=o>,</span> <span class=nd>@Nullable</span> <span class=n>BeanDefinition</span> <span class=n>containingBean</span><span class=o>)</span> <span class=o>{</span>
 		<span class=c1>// 1. 解析 id 和 name 属性
 </span><span class=c1></span>		<span class=n>String</span> <span class=n>id</span> <span class=o>=</span> <span class=n>ele</span><span class=o>.</span><span class=na>getAttribute</span><span class=o>(</span><span class=n>ID_ATTRIBUTE</span><span class=o>);</span>
 		<span class=n>String</span> <span class=n>nameAttr</span> <span class=o>=</span> <span class=n>ele</span><span class=o>.</span><span class=na>getAttribute</span><span class=o>(</span><span class=n>NAME_ATTRIBUTE</span><span class=o>);</span>
@@ -230,7 +230,7 @@ window.isDark&&document.body.classList.add('dark-theme');</script><div class=wra
 		<span class=o>}</span>
 
 		<span class=k>return</span> <span class=kc>null</span><span class=o>;</span>
-	<span class=o>}</span>
+	<span class=o>}</span>	
 </code></pre></td></tr></table></div></div><p>上面方法主要分为四个步骤：</p><ol><li><p>提取元素中的id以及name属性。</p></li><li><p>调用<code>parseBeanDefinitionElement(ele, beanName, containingBean)</code>方法对属性进行解析并封装成 <code>AbstractBeanDefinition</code> 实例 <code>beanDefinition</code> 。</p></li><li><p>生成唯一的<code>beanName</code>,<code>beanName</code> 的命名规则为：</p><ul><li>3.1 处 ，如果 <code>id</code> 不为空，则 <code>beanName = id</code> 。</li><li>3.2 处，如果 <code>id</code> 为空，但是 <code>aliases</code> 不空，则 <code>beanName</code> 为 <code>aliases</code> 的<strong>第一个</strong>元素。</li><li>3.3 处，如果两者都为空，则根据<strong>默认规则</strong>来设置 <code>beanName </code>。</li></ul></li><li><p>根据所获取的信息（<code>beanName</code>、<code>aliases</code>、<code>beanDefinition</code>）构造 <code>BeanDefinitionHolder</code> 实例对象并返回。</p></li></ol><h3 id=21-parsebeandefinitionelement分析>2.1 <code>parseBeanDefinitionElement</code>分析</h3><p><strong>注意</strong>，这个<code>parseBeanDefinitionElement</code>与上一节的<code>parseBeanDefinitionElement</code>不同，这一小节的<code>parseBeanDefinitionElement</code>方法多了一个参数<code>beanName</code>。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
 </span><span class=lnt> 2
 </span><span class=lnt> 3
@@ -300,7 +300,7 @@ window.isDark&&document.body.classList.add('dark-theme');</script><div class=wra
 </span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>//BeanDefinitionParserDelegate.java
 </span><span class=c1></span>
 <span class=nd>@Nullable</span>
-	<span class=kd>public</span> <span class=n>AbstractBeanDefinition</span> <span class=nf>parseBeanDefinitionElement</span><span class=o>(</span>
+<span class=kd>public</span> <span class=n>AbstractBeanDefinition</span> <span class=nf>parseBeanDefinitionElement</span><span class=o>(</span>
 			<span class=n>Element</span> <span class=n>ele</span><span class=o>,</span> <span class=n>String</span> <span class=n>beanName</span><span class=o>,</span> <span class=nd>@Nullable</span> <span class=n>BeanDefinition</span> <span class=n>containingBean</span><span class=o>)</span> <span class=o>{</span>
 
 		<span class=k>this</span><span class=o>.</span><span class=na>parseState</span><span class=o>.</span><span class=na>push</span><span class=o>(</span><span class=k>new</span> <span class=n>BeanEntry</span><span class=o>(</span><span class=n>beanName</span><span class=o>));</span>
@@ -361,7 +361,7 @@ window.isDark&&document.body.classList.add('dark-theme');</script><div class=wra
 		<span class=o>}</span>
 
 		<span class=k>return</span> <span class=kc>null</span><span class=o>;</span>
-	<span class=o>}</span>
+	<span class=o>}</span>	
 
 </code></pre></td></tr></table></div></div><p>该方法解析了bean标签的所有属性，有常用的，也有不常用的。</p><p>其中有两个重要的方法</p><ul><li><code>createBeanDefinition(className, parent)</code>,该方法作用是创建 <code>AbstractBeanDefinition </code>对象。<code>AbstractBeanDefinition </code>有什么用，为什么要创建<code>AbstractBeanDefinition </code>对象呢？请看下面的补充分析。</li><li><code>parseBeanDefinitionAttributes(ele, beanName, containingBean, bd)</code>,该方法作用是解析默认 bean 的各种属性。</li></ul><h4 id=211-创建abstractbeandefinition-对象>2.1.1 创建<code>AbstractBeanDefinition </code>对象</h4><p>讲创建<code>AbstractBeanDefinition </code>对象之前，先来补充下<code>BeanDefinition</code>的一些知识。</p><p><code>org.springframework.beans.factory.config.BeanDefinition</code> ，是一个接口，它描述了一个 Bean 实例的定义，包括属性值、构造方法值和继承它的类的更多信息。</p><p><img class=lazyload src=/svg/loading.small.min.svg data-sizes=auto data-srcset="/images/IoC-load-BeanDefinitions-2/image-20200419210842067.png,  1.5x,  2x" data-src alt=image-20200419210842067 title=image-20200419210842067></p><center>BeanDefinition相关类图</center><p>从父关系来看，<code>BeanDefinition</code> 继承 <code>AttributeAccessor</code> 和 <code>BeanMetadataElement</code> 接口。</p><ul><li><code>org.springframework.cor.AttributeAccessor</code> 接口，定义了与其它对象的（元数据）进行连接和访问的约定，即对属性的修改，包括获取、设置、删除。</li><li><code>org.springframework.beans.BeanMetadataElement</code> 接口，Bean 元对象持有的配置元素可以通过 <code>getSource()</code> 方法来获取。</li></ul><p>从子关系来看，<code>BeanDefinition</code>在Spring中有三个实现类。<code>ChildBeanDefinition</code>,<code>RootBeanDefinition</code>,<code>GenericBeanDefinition</code>。</p><ul><li><p>三个实现类都继承 <code>AbstractBeanDefinition </code>抽象类</p></li><li><p>如果配置文件中定义了父 <code>&lt;bean></code> 和 子 <code>&lt;bean></code> ，则父<code>&lt;bean></code> 用 <code>RootBeanDefinition</code> 表示，子 <code>&lt;bean></code>用<code> ChildBeanDefinition</code> 表示。没有父 <code>&lt;bean></code> 的就使用<code>RootBeanDefinition </code>表示。</p></li></ul><p>Spring通过<code>BeanDefinition</code>将配置文件中的<bean>配置信息转换为容器的内部表示，并将这些<code>BeanDefiniton</code>注册到<code>BeanDefinitonRegistry</code>中。Spring容器的<code>BeanDefinitionRegistry</code>就像是Spring配置信息的内存数据库，主要是以map的形式保存，后续操作直接从<code>BeanDefinitionRegistry</code>中读取配置信息。</p><p>解析属性首先要创建用于承载属性的实例，也就是创建<code>GenericBeanDefinition</code>类型的实例，<code>createBeanDefinition(className, parent)</code>就是实现这个功能。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2

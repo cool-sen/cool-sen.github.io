@@ -81,7 +81,7 @@ protected void processBeanDefinition(Element ele, BeanDefinitionParserDelegate d
 //BeanDefinitionParserDelegate.java
 
 @Nullable
-	public BeanDefinitionHolder parseBeanDefinitionElement(Element ele, @Nullable BeanDefinition containingBean) {
+public BeanDefinitionHolder parseBeanDefinitionElement(Element ele, @Nullable BeanDefinition containingBean) {
 		// 1. 解析 id 和 name 属性
 		String id = ele.getAttribute(ID_ATTRIBUTE);
 		String nameAttr = ele.getAttribute(NAME_ATTRIBUTE);
@@ -145,7 +145,7 @@ protected void processBeanDefinition(Element ele, BeanDefinitionParserDelegate d
 		}
 
 		return null;
-	}
+	}	
 ```
 
 上面方法主要分为四个步骤：
@@ -167,7 +167,7 @@ protected void processBeanDefinition(Element ele, BeanDefinitionParserDelegate d
 //BeanDefinitionParserDelegate.java
 
 @Nullable
-	public AbstractBeanDefinition parseBeanDefinitionElement(
+public AbstractBeanDefinition parseBeanDefinitionElement(
 			Element ele, String beanName, @Nullable BeanDefinition containingBean) {
 
 		this.parseState.push(new BeanEntry(beanName));
@@ -228,7 +228,7 @@ protected void processBeanDefinition(Element ele, BeanDefinitionParserDelegate d
 		}
 
 		return null;
-	}
+	}	
 
 ```
 
