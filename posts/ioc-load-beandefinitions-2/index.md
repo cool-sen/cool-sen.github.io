@@ -75,7 +75,7 @@ protected void processBeanDefinition(Element ele, BeanDefinitionParserDelegate d
 
 下面就重点对上面四个步骤做个详细介绍。
 
-## 2 `parseBeanDefinitionElement(ele, containingBean)`方法分析
+## 2 `parseBeanDefinitionElement`方法分析
 
 ```java
 //BeanDefinitionParserDelegate.java
@@ -159,7 +159,7 @@ protected void processBeanDefinition(Element ele, BeanDefinitionParserDelegate d
 
 4. 根据所获取的信息（`beanName`、`aliases`、`beanDefinition`）构造 `BeanDefinitionHolder` 实例对象并返回。
 
-### 2.1 `parseBeanDefinitionElement(ele, beanName, containingBean)`分析
+### 2.1 `parseBeanDefinitionElement`分析
 
 **注意**，这个`parseBeanDefinitionElement`与上一节的`parseBeanDefinitionElement`不同，这一小节的`parseBeanDefinitionElement`方法多了一个参数`beanName`。
 
