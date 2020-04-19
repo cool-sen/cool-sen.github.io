@@ -209,4 +209,110 @@ public int loadBeanDefinitions(EncodedResource encodedResource) throws BeanDefin
    	}
    ```
 
+   ## 3 注册 BeanDefinition 流程
+
+   分析上一节的`registerBeanDefinitions`方法
+
+   ```java
+   //XmlBeanDefinitionReader.java
    
+   public int registerBeanDefinitions(Document doc, Resource resource) throws BeanDefinitionStoreException {
+   		// 创建 BeanDefinitionDocumentReader 对象
+   		BeanDefinitionDocumentReader documentReader = createBeanDefinitionDocumentReader();
+   		// 获取已注册的 BeanDefinition 数量
+   		int countBefore = getRegistry().getBeanDefinitionCount();
+   		// 加载及注册bean,过程为：先创建 XmlReaderContext 对象，再注册 BeanDefinition
+   		documentReader.registerBeanDefinitions(doc, createReaderContext(resource));
+   		// 计算新注册的 BeanDefinition 数量
+   		return getRegistry().getBeanDefinitionCount() - countBefore;
+   	}
+   ```
+
+   * createBeanDefinitionDocumentReader()方法，创建了DefaultBeanDefinitionDocumentReader实例。注意BeanDefinitionDocumentReader是一个接口，DefaultBeanDefinitionDocumentReader实现了这个接口。
+
+   * 调用该 BeanDefinitionDocumentReader 的 `registerBeanDefinitions(Document doc, XmlReaderContext readerContext)` 方法，开启解析过程。
+
+     解析过程如下：
+
+     ```java
+     // DefaultBeanDefinitionDocumentReader.java
+     
+     @Override
+     public void registerBeanDefinitions(Document doc, XmlReaderContext readerContext) {
+         this.readerContext = readerContext;
+         // 获得 XML Document Root Element
+         // 执行注册 BeanDefinition
+         doRegisterBeanDefinitions(doc.getDocumentElement());
+     }
+     ```
+
+   ### 3.1 doRegisterBeanDefinitions方法分析
+
+   ```java
+   // DefaultBeanDefinitionDocumentReader.java
+   
+   protected void doRegisterBeanDefinitions(Element root) {
+   		BeanDefinitionParserDelegate parent = this.delegate;
+   		this.delegate = createDelegate(getReaderContext(), root, parent);
+   		//非核心代码
+   		if (this.delegate.isDefaultNamespace(root)) {
+   			String profileSpec = root.getAttribute(PROFILE_ATTRIBUTE);
+   			if (StringUtils.hasText(profileSpec)) {
+   				String[] specifiedProfiles = StringUtils.tokenizeToStringArray(
+   						profileSpec, BeanDefinitionParserDelegate.MULTI_VALUE_ATTRIBUTE_DELIMITERS);
+   				if (!getReaderContext().getEnvironment().acceptsProfiles(specifiedProfiles)) {
+   					if (logger.isDebugEnabled()) {
+   						logger.debug("Skipped XML bean definition file due to specified profiles [" + profileSpec +
+   								"] not matching: " + getReaderContext().getResource());
+   					}
+   					return;
+   				}
+   			}
+   		}
+   		//核心代码
+       	//解析前处理，留给子类实现
+   		preProcessXml(root);
+       	// 解析
+   		parseBeanDefinitions(root, this.delegate);
+       	//解析后处理，留给子类实现
+   		postProcessXml(root);
+   
+   		this.delegate = parent;
+   	}
+   ```
+
+   * `preProcessXml(Element root)`、`postProcessXml(Element root)` 为前置、后置增强处理，目前 Spring 中都是空实现。这是模板方法设计模式的体现。如果需要在Bean解析前后做处理的话，只需要继承`DefaultBeanDefinitionDocumentReader`,重写这两个方法即可。
+   * `parseBeanDefinitions(Element root, BeanDefinitionParserDelegate delegate)` 是对根元素 root 的解析注册过程。
+
+### 3.2 parseBeanDefinitions方法分析
+
+```java
+protected void parseBeanDefinitions(Element root, BeanDefinitionParserDelegate delegate) {
+		//// 如果根节点使用默认命名空间，执行默认解析
+		if (delegate.isDefaultNamespace(root)) {
+			// 遍历子节点
+			NodeList nl = root.getChildNodes();
+			for (int i = 0; i < nl.getLength(); i++) {
+				Node node = nl.item(i);
+				if (node instanceof Element) {
+					Element ele = (Element) node;
+					// 如果该节点使用默认命名空间，执行默认解析
+					if (delegate.isDefaultNamespace(ele)) {
+						parseDefaultElement(ele, delegate);
+					}
+					// 如果该节点非默认命名空间，执行自定义解析
+					else {
+						delegate.parseCustomElement(ele);
+					}
+				}
+			}
+		}
+		// 如果根节点非默认命名空间，执行自定义解析
+		else {
+			delegate.parseCustomElement(root);
+		}
+	}
+```
+
+* 若节点为默认命名空间，调用 `parseDefaultElement(Element ele, BeanDefinitionParserDelegate delegate)` 方法，开启默认标签的解析注册过程
+* 若节点为自定义命名空间，调用`parseCustomElement(Element ele)` 方法，开启自定义标签的解析注册过程。
