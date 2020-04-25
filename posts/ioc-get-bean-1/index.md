@@ -1,4 +1,4 @@
-# ﻿IoC -加载 Bean-总览
+# ﻿Spring-IoC -加载 Bean-总览
 
 
 ## 2.1 获取 beanName
