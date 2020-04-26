@@ -120,7 +120,9 @@ protected Object getObjectForBeanInstance(
             // 如果指定 BeanName 是子 Bean 的话同时会合并父类的相关属性
             mbd = getMergedLocalBeanDefinition(beanName);
         }
-        // 是否是用户定义的，而不是应用程序本身定义的
+        // synthetic 字面意思是"合成的"。通过全局查找，我发现在 AOP 相关的类中会将该属性设为 true。
+        // 所以我觉得该字段可能表示某个 bean 是不是被 AOP 增强过，也就是 AOP 基于原始类合成了一个新的代理类。
+        // 不过目前只是猜测，没有深究。如果有朋友知道这个字段的具体意义，还望不吝赐教
         boolean synthetic = (mbd != null && mbd.isSynthetic());
         // 核心处理方法，使用 FactoryBean 获得 Bean 对象
         object = getObjectFromFactoryBean(factory, beanName, !synthetic);
