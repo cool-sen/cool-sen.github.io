@@ -1,0 +1,740 @@
+<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta http-equiv=x-ua-compatible content="IE=edge, chrome=1"><title>创建Bean-属性填充 | Recording</title><meta name=Description content="recording my life"><meta property="og:title" content="创建Bean-属性填充"><meta property="og:description" content="1 简介 在Spring 创建 bean 的流程中，Spring 先通过反射创建一个原始的 bean 对象，然后再向这个原始的 bean 对象中填充属性。对于填充属性这个过程，简"><meta property="og:type" content="article"><meta property="og:url" content="https://cool-sen.github.io/posts/ioc-createbean-3/"><meta property="article:published_time" content="2020-05-03T17:35:57+08:00"><meta property="article:modified_time" content="2020-05-03T17:35:57+08:00"><meta name=twitter:card content="summary"><meta name=twitter:title content="创建Bean-属性填充"><meta name=twitter:description content="1 简介 在Spring 创建 bean 的流程中，Spring 先通过反射创建一个原始的 bean 对象，然后再向这个原始的 bean 对象中填充属性。对于填充属性这个过程，简"><meta name=theme-color content="#ffffff"><meta name=msapplication-TileColor content="#da532c"><link rel=canonical href=https://cool-sen.github.io/posts/ioc-createbean-3/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><link rel=prev href=https://cool-sen.github.io/posts/ioc-createbean-2/><link href=https://cdn.staticfile.org/font-awesome/5.12.1/css/all.min.css rel=stylesheet><link href=https://cdn.staticfile.org/animate.css/3.7.2/animate.css rel=stylesheet><link rel=stylesheet href=/css/style.min.css><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"创建Bean-属性填充","inLanguage":"zh-CN","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/cool-sen.github.io\/posts\/ioc-createbean-3\/"},"image":{"@type":"ImageObject","url":"https:\/\/cool-sen.github.io\/","width":800,"height":600},"genre":"posts","keywords":"Spring, IOC","wordcount":4753,"url":"https:\/\/cool-sen.github.io\/posts\/ioc-createbean-3\/","datePublished":"2020-05-03","dateModified":"2020-05-03","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"ZhaoQiang","logo":{"@type":"ImageObject","url":"https:\/\/cool-sen.github.io\/","width":127,"height":40}},"author":{"@type":"Person","name":"shuaisenma"},"description":""}</script></head><body><script>if(!window.localStorage||!window.localStorage.getItem('theme')){window.isDark=window.matchMedia('(prefers-color-scheme: dark)').matches;}else{window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';}
+window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><header class=desktop id=header-desktop><div class=header-wrapper><div class=header-title><a href=/>Recording</a></div><div class=menu><a class=menu-item href=/posts rel="noopener noreffer">文章</a><a class=menu-item href=/tags rel="noopener noreffer">标签</a><a class=menu-item href=/categories rel="noopener noreffer">分类</a><a class=menu-item href=/about rel="noopener noreffer">关于</a><span class=menu-item>|</span>
+<a href=javascript:void(0); class="menu-item theme-switch" title=切换主题><i class="fas fa-adjust fa-fw"></i></a></div></div></header><header class=mobile id=header-mobile><div class=header-wrapper><div class=header-container><div class=header-title><a href=/>Recording</a></div><div class=menu-toggle id=menu-toggle-mobile><span></span><span></span><span></span></div></div><div class=menu id=menu-mobile><a class=menu-item href=/posts rel="noopener noreffer">文章</a><a class=menu-item href=/tags rel="noopener noreffer">标签</a><a class=menu-item href=/categories rel="noopener noreffer">分类</a><a class=menu-item href=/about rel="noopener noreffer">关于</a><a href=javascript:void(0); class="menu-item theme-switch" title=切换主题>
+<i class="fas fa-adjust fa-fw"></i></a></div></div></header><script>window.desktopHeaderMode="fixed";window.mobileHeaderMode="auto";</script><main class=main><div class=container><article class="page single"><h1 class="single-title animated flipInX">创建Bean-属性填充</h1><div class=post-meta><div class=post-meta-line><span class=post-author><a href=/ title=Author rel="noopener noreffer author" class=author><i class="fas fa-user-circle fa-fw"></i>shuaisenma</a>
+</span>&nbsp;
+<span class=post-category>收录于<a href=/categories/spring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90>
+<i class="far fa-folder fa-fw"></i>Spring源码分析</a></span></div><div class=post-meta-line><i class="far fa-calendar-alt fa-fw"></i><time datetime=2020-05-03>2020-05-03</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>约 4753 字&nbsp;
+<i class="far fa-clock fa-fw"></i>预计阅读 10 分钟&nbsp;<span id=/posts/ioc-createbean-3/ class=leancloud_visitors data-flag-title=创建Bean-属性填充>
+<i class="far fa-eye fa-fw"></i><span class=leancloud-visitors-count></span>&nbsp;次阅读
+</span>&nbsp;</div></div><div class=toc id=toc-auto><h2 class=toc-title>目录</h2><div class="toc-content always-active" id=toc-content-auto></div></div><div class=toc id=toc-static><details><summary><div class=toc-title><span>目录</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=toc-content id=toc-content-static><nav id=TableOfContents><ul><li><a href=#1-简介>1 简介</a></li><li><a href=#2-源码分析>2 源码分析</a><ul><li><a href=#21-populatebean-源码总览>2.1 <code>populateBean </code>源码总览</a></li><li><a href=#22-autowirebyname方法分析>2.2 <code>autowireByName</code>方法分析</a></li><li><a href=#23--autowirebytype-方法分析>2.3 <code>autowireByType </code>方法分析</a></li><li><a href=#24-applypropertyvalues-方法分析>2.4 <code>applyPropertyValues</code> 方法分析</a></li></ul></li><li><a href=#参考>参考</a></li></ul></nav></div></details></div><div class=content id=content><h2 id=1-简介>1 简介</h2><p>在Spring 创建 bean 的流程中，Spring 先通过反射创建一个原始的 bean 对象，然后再向这个原始的 bean 对象中填充属性。对于填充属性这个过程，简单点来说，JavaBean 的每个属性通常都有 getter/setter 方法，我们可以直接调用 setter 方法将属性值设置进去。但是，填充属性的过程中还有许多事情要做。比如在 Spring 配置中，所有属性值都是以字符串的形式进行配置的，我们在将这些属性值赋值给对象的成员变量时，要根据变量类型进行相应的类型转换。对于一些集合类的配置，还要将这些配置转换成相应的集合对象才能进行后续的操作。除此之外，如果用户配置了自动注入（<code>autowire = byName/byType</code>），Spring 还要去为自动注入的属性寻找合适的注入项。由此可以见，属性填充的整个过程还是很复杂的，并非是简单调用 setter 方法设置属性值即可。</p><p>接下来，将深入到源码中，从源码中了解属性填充的整个过程。</p><h2 id=2-源码分析>2 源码分析</h2><h3 id=21-populatebean-源码总览>2.1 <code>populateBean </code>源码总览</h3><p>在Spring中的属性填充，是<code>populateBean</code> 方法来实现的。该函数的作用是将 <code>BeanDefinition </code>中的属性值赋值给 <code>BeanWrapper</code> 实例对象。代码如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>  1
+</span><span class=lnt>  2
+</span><span class=lnt>  3
+</span><span class=lnt>  4
+</span><span class=lnt>  5
+</span><span class=lnt>  6
+</span><span class=lnt>  7
+</span><span class=lnt>  8
+</span><span class=lnt>  9
+</span><span class=lnt> 10
+</span><span class=lnt> 11
+</span><span class=lnt> 12
+</span><span class=lnt> 13
+</span><span class=lnt> 14
+</span><span class=lnt> 15
+</span><span class=lnt> 16
+</span><span class=lnt> 17
+</span><span class=lnt> 18
+</span><span class=lnt> 19
+</span><span class=lnt> 20
+</span><span class=lnt> 21
+</span><span class=lnt> 22
+</span><span class=lnt> 23
+</span><span class=lnt> 24
+</span><span class=lnt> 25
+</span><span class=lnt> 26
+</span><span class=lnt> 27
+</span><span class=lnt> 28
+</span><span class=lnt> 29
+</span><span class=lnt> 30
+</span><span class=lnt> 31
+</span><span class=lnt> 32
+</span><span class=lnt> 33
+</span><span class=lnt> 34
+</span><span class=lnt> 35
+</span><span class=lnt> 36
+</span><span class=lnt> 37
+</span><span class=lnt> 38
+</span><span class=lnt> 39
+</span><span class=lnt> 40
+</span><span class=lnt> 41
+</span><span class=lnt> 42
+</span><span class=lnt> 43
+</span><span class=lnt> 44
+</span><span class=lnt> 45
+</span><span class=lnt> 46
+</span><span class=lnt> 47
+</span><span class=lnt> 48
+</span><span class=lnt> 49
+</span><span class=lnt> 50
+</span><span class=lnt> 51
+</span><span class=lnt> 52
+</span><span class=lnt> 53
+</span><span class=lnt> 54
+</span><span class=lnt> 55
+</span><span class=lnt> 56
+</span><span class=lnt> 57
+</span><span class=lnt> 58
+</span><span class=lnt> 59
+</span><span class=lnt> 60
+</span><span class=lnt> 61
+</span><span class=lnt> 62
+</span><span class=lnt> 63
+</span><span class=lnt> 64
+</span><span class=lnt> 65
+</span><span class=lnt> 66
+</span><span class=lnt> 67
+</span><span class=lnt> 68
+</span><span class=lnt> 69
+</span><span class=lnt> 70
+</span><span class=lnt> 71
+</span><span class=lnt> 72
+</span><span class=lnt> 73
+</span><span class=lnt> 74
+</span><span class=lnt> 75
+</span><span class=lnt> 76
+</span><span class=lnt> 77
+</span><span class=lnt> 78
+</span><span class=lnt> 79
+</span><span class=lnt> 80
+</span><span class=lnt> 81
+</span><span class=lnt> 82
+</span><span class=lnt> 83
+</span><span class=lnt> 84
+</span><span class=lnt> 85
+</span><span class=lnt> 86
+</span><span class=lnt> 87
+</span><span class=lnt> 88
+</span><span class=lnt> 89
+</span><span class=lnt> 90
+</span><span class=lnt> 91
+</span><span class=lnt> 92
+</span><span class=lnt> 93
+</span><span class=lnt> 94
+</span><span class=lnt> 95
+</span><span class=lnt> 96
+</span><span class=lnt> 97
+</span><span class=lnt> 98
+</span><span class=lnt> 99
+</span><span class=lnt>100
+</span><span class=lnt>101
+</span><span class=lnt>102
+</span><span class=lnt>103
+</span><span class=lnt>104
+</span><span class=lnt>105
+</span><span class=lnt>106
+</span><span class=lnt>107
+</span><span class=lnt>108
+</span><span class=lnt>109
+</span><span class=lnt>110
+</span><span class=lnt>111
+</span><span class=lnt>112
+</span><span class=lnt>113
+</span><span class=lnt>114
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>// AbstractAutowireCapableBeanFactory.java
+</span><span class=c1></span>
+<span class=kd>protected</span> <span class=kt>void</span> <span class=nf>populateBean</span><span class=o>(</span><span class=n>String</span> <span class=n>beanName</span><span class=o>,</span> <span class=n>RootBeanDefinition</span> <span class=n>mbd</span><span class=o>,</span> <span class=nd>@Nullable</span> <span class=n>BeanWrapper</span> <span class=n>bw</span><span class=o>)</span> <span class=o>{</span>
+    <span class=c1>// 没有实例化对象
+</span><span class=c1></span>    <span class=k>if</span> <span class=o>(</span><span class=n>bw</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+        <span class=c1>// 有属性，则抛出 BeanCreationException 异常
+</span><span class=c1></span>        <span class=k>if</span> <span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>hasPropertyValues</span><span class=o>())</span> <span class=o>{</span>
+            <span class=k>throw</span> <span class=k>new</span> <span class=n>BeanCreationException</span><span class=o>(</span>
+                    <span class=n>mbd</span><span class=o>.</span><span class=na>getResourceDescription</span><span class=o>(),</span> <span class=n>beanName</span><span class=o>,</span> <span class=s>&#34;Cannot apply property values to null instance&#34;</span><span class=o>);</span>
+            <span class=c1>// 没有属性，直接 return 返回
+</span><span class=c1></span>        <span class=o>}</span> <span class=k>else</span> <span class=o>{</span>
+            <span class=k>return</span><span class=o>;</span>
+        <span class=o>}</span>
+    <span class=o>}</span>
+
+     <span class=cm>/*
+</span><span class=cm>     * &lt;1&gt; 
+</span><span class=cm>     * 在属性被填充前，给 InstantiationAwareBeanPostProcessor 类型的后置处理器一个修改 
+</span><span class=cm>     * bean 状态的机会。关于这段后置引用，官方的解释是：让用户可以自定义属性注入。比如用户实现一
+</span><span class=cm>     * 个 InstantiationAwareBeanPostProcessor 类型的后置处理器，并通过 
+</span><span class=cm>     * postProcessAfterInstantiation 方法向 bean 的成员变量注入自定义的信息。当然，如果无
+</span><span class=cm>     * 特殊需求，直接使用配置中的信息注入即可。另外，Spring 并不建议大家直接实现 
+</span><span class=cm>     * InstantiationAwareBeanPostProcessor 接口，如果想实现这种类型的后置处理器，更建议
+</span><span class=cm>     * 通过继承 InstantiationAwareBeanPostProcessorAdapter 抽象类实现自定义后置处理器。
+</span><span class=cm>     */</span>
+    <span class=kt>boolean</span> <span class=n>continueWithPropertyPopulation</span> <span class=o>=</span> <span class=kc>true</span><span class=o>;</span>
+    <span class=k>if</span> <span class=o>(!</span><span class=n>mbd</span><span class=o>.</span><span class=na>isSynthetic</span><span class=o>()</span>  <span class=c1>// bean 不是&#34;合成&#34;的，即未由应用程序本身定义
+</span><span class=c1></span>            <span class=o>&amp;&amp;</span> <span class=n>hasInstantiationAwareBeanPostProcessors</span><span class=o>())</span> <span class=o>{</span> <span class=c1>// 是否持有 InstantiationAwareBeanPostProcessor
+</span><span class=c1></span>        <span class=k>for</span> <span class=o>(</span><span class=n>BeanPostProcessor</span> <span class=n>bp</span> <span class=o>:</span> <span class=n>getBeanPostProcessors</span><span class=o>())</span> <span class=o>{</span>
+            <span class=k>if</span> <span class=o>(</span><span class=n>bp</span> <span class=k>instanceof</span> <span class=n>InstantiationAwareBeanPostProcessor</span><span class=o>)</span> <span class=o>{</span> 
+                <span class=n>InstantiationAwareBeanPostProcessor</span> <span class=n>ibp</span> <span class=o>=</span> <span class=o>(</span><span class=n>InstantiationAwareBeanPostProcessor</span><span class=o>)</span> <span class=n>bp</span><span class=o>;</span>
+                <span class=c1>// postProcessAfterInstantiation方法返回值含义：是否继续填充 bean
+</span><span class=c1></span>                <span class=c1>// 如果应该在 bean上面设置属性则返回 true，否则返回 false
+</span><span class=c1></span>                <span class=c1>// 一般情况下，应该是返回true 。
+</span><span class=c1></span>                <span class=c1>// 返回 false 的话，将会阻止在此 Bean 实例上调用任何后续的 InstantiationAwareBeanPostProcessor 实例。
+</span><span class=c1></span>                <span class=k>if</span> <span class=o>(!</span><span class=n>ibp</span><span class=o>.</span><span class=na>postProcessAfterInstantiation</span><span class=o>(</span><span class=n>bw</span><span class=o>.</span><span class=na>getWrappedInstance</span><span class=o>(),</span> <span class=n>beanName</span><span class=o>))</span> <span class=o>{</span>
+                    <span class=n>continueWithPropertyPopulation</span> <span class=o>=</span> <span class=kc>false</span><span class=o>;</span>
+                    <span class=k>break</span><span class=o>;</span>
+                <span class=o>}</span>
+            <span class=o>}</span>
+        <span class=o>}</span>
+    <span class=o>}</span>
+    <span class=cm>/* 
+</span><span class=cm>     * 如果上面设置 continueWithPropertyPopulation = false，表明用户可能已经自己填充了
+</span><span class=cm>     * bean 的属性，不需要 Spring 帮忙填充了。此时直接返回即可
+</span><span class=cm>     */</span>
+    <span class=k>if</span> <span class=o>(!</span><span class=n>continueWithPropertyPopulation</span><span class=o>)</span> <span class=o>{</span>
+        <span class=k>return</span><span class=o>;</span>
+    <span class=o>}</span>
+
+    <span class=c1>// bean 的属性值
+</span><span class=c1></span>    <span class=n>PropertyValues</span> <span class=n>pvs</span> <span class=o>=</span> <span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>hasPropertyValues</span><span class=o>()</span> <span class=o>?</span> <span class=n>mbd</span><span class=o>.</span><span class=na>getPropertyValues</span><span class=o>()</span> <span class=o>:</span> <span class=kc>null</span><span class=o>);</span>
+
+    <span class=c1>// &lt;2&gt;  根据名称或类型注入依赖
+</span><span class=c1></span>    <span class=k>if</span> <span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>getResolvedAutowireMode</span><span class=o>()</span> <span class=o>==</span> <span class=n>AUTOWIRE_BY_NAME</span> <span class=o>||</span> <span class=n>mbd</span><span class=o>.</span><span class=na>getResolvedAutowireMode</span><span class=o>()</span> <span class=o>==</span> <span class=n>AUTOWIRE_BY_TYPE</span><span class=o>)</span> <span class=o>{</span>
+        <span class=c1>// 将 PropertyValues 封装成 MutablePropertyValues 对象
+</span><span class=c1></span>        <span class=c1>// MutablePropertyValues 允许对属性进行简单的操作，并提供构造函数以支持Map的深度复制和构造。
+</span><span class=c1></span>        <span class=n>MutablePropertyValues</span> <span class=n>newPvs</span> <span class=o>=</span> <span class=k>new</span> <span class=n>MutablePropertyValues</span><span class=o>(</span><span class=n>pvs</span><span class=o>);</span>
+        <span class=c1>// 根据名称自动注入
+</span><span class=c1></span>        <span class=k>if</span> <span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>getResolvedAutowireMode</span><span class=o>()</span> <span class=o>==</span> <span class=n>AUTOWIRE_BY_NAME</span><span class=o>)</span> <span class=o>{</span>
+            <span class=n>autowireByName</span><span class=o>(</span><span class=n>beanName</span><span class=o>,</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>bw</span><span class=o>,</span> <span class=n>newPvs</span><span class=o>);</span>
+        <span class=o>}</span>
+        <span class=c1>// 根据类型自动注入
+</span><span class=c1></span>        <span class=k>if</span> <span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>getResolvedAutowireMode</span><span class=o>()</span> <span class=o>==</span> <span class=n>AUTOWIRE_BY_TYPE</span><span class=o>)</span> <span class=o>{</span>
+            <span class=n>autowireByType</span><span class=o>(</span><span class=n>beanName</span><span class=o>,</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>bw</span><span class=o>,</span> <span class=n>newPvs</span><span class=o>);</span>
+        <span class=o>}</span>
+        <span class=n>pvs</span> <span class=o>=</span> <span class=n>newPvs</span><span class=o>;</span>
+    <span class=o>}</span>
+
+    <span class=kt>boolean</span> <span class=n>hasInstAwareBpps</span> <span class=o>=</span> <span class=n>hasInstantiationAwareBeanPostProcessors</span><span class=o>();</span>
+    <span class=c1>// 是否需要进行【依赖检查】
+</span><span class=c1></span>    <span class=kt>boolean</span> <span class=n>needsDepCheck</span> <span class=o>=</span> <span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>getDependencyCheck</span><span class=o>()</span> <span class=o>!=</span> <span class=n>AbstractBeanDefinition</span><span class=o>.</span><span class=na>DEPENDENCY_CHECK_NONE</span><span class=o>);</span>
+
+    <span class=c1>// &lt;3&gt; BeanPostProcessor 处理
+</span><span class=c1></span>    <span class=n>PropertyDescriptor</span><span class=o>[]</span> <span class=n>filteredPds</span> <span class=o>=</span> <span class=kc>null</span><span class=o>;</span>
+    <span class=k>if</span> <span class=o>(</span><span class=n>hasInstAwareBpps</span><span class=o>)</span> <span class=o>{</span>
+        <span class=k>if</span> <span class=o>(</span><span class=n>pvs</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+            <span class=n>pvs</span> <span class=o>=</span> <span class=n>mbd</span><span class=o>.</span><span class=na>getPropertyValues</span><span class=o>();</span>
+        <span class=o>}</span>
+        <span class=k>for</span> <span class=o>(</span><span class=n>BeanPostProcessor</span> <span class=n>bp</span> <span class=o>:</span> <span class=n>getBeanPostProcessors</span><span class=o>())</span> <span class=o>{</span>
+            <span class=k>if</span> <span class=o>(</span><span class=n>bp</span> <span class=k>instanceof</span> <span class=n>InstantiationAwareBeanPostProcessor</span><span class=o>)</span> <span class=o>{</span>
+                <span class=n>InstantiationAwareBeanPostProcessor</span> <span class=n>ibp</span> <span class=o>=</span> <span class=o>(</span><span class=n>InstantiationAwareBeanPostProcessor</span><span class=o>)</span> <span class=n>bp</span><span class=o>;</span>
+                <span class=c1>// 对所有需要依赖检查的属性进行后处理
+</span><span class=c1></span>                <span class=n>PropertyValues</span> <span class=n>pvsToUse</span> <span class=o>=</span> <span class=n>ibp</span><span class=o>.</span><span class=na>postProcessProperties</span><span class=o>(</span><span class=n>pvs</span><span class=o>,</span> <span class=n>bw</span><span class=o>.</span><span class=na>getWrappedInstance</span><span class=o>(),</span> <span class=n>beanName</span><span class=o>);</span>
+                <span class=k>if</span> <span class=o>(</span><span class=n>pvsToUse</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+                    <span class=c1>// 从 bw 对象中提取 PropertyDescriptor 结果集
+</span><span class=c1></span>                    <span class=c1>// PropertyDescriptor：可以通过一对存取方法提取一个属性
+</span><span class=c1></span>                    <span class=k>if</span> <span class=o>(</span><span class=n>filteredPds</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+                        <span class=n>filteredPds</span> <span class=o>=</span> <span class=n>filterPropertyDescriptorsForDependencyCheck</span><span class=o>(</span><span class=n>bw</span><span class=o>,</span> <span class=n>mbd</span><span class=o>.</span><span class=na>allowCaching</span><span class=o>);</span>
+                    <span class=o>}</span>
+                    <span class=n>pvsToUse</span> <span class=o>=</span> <span class=n>ibp</span><span class=o>.</span><span class=na>postProcessPropertyValues</span><span class=o>(</span><span class=n>pvs</span><span class=o>,</span> <span class=n>filteredPds</span><span class=o>,</span> <span class=n>bw</span><span class=o>.</span><span class=na>getWrappedInstance</span><span class=o>(),</span> <span class=n>beanName</span><span class=o>);</span>
+                    <span class=k>if</span> <span class=o>(</span><span class=n>pvsToUse</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+                        <span class=k>return</span><span class=o>;</span>
+                    <span class=o>}</span>
+                <span class=o>}</span>
+                <span class=n>pvs</span> <span class=o>=</span> <span class=n>pvsToUse</span><span class=o>;</span>
+            <span class=o>}</span>
+        <span class=o>}</span>
+    <span class=o>}</span>
+    
+    <span class=c1>// &lt;4&gt; 依赖检查
+</span><span class=c1></span>    <span class=k>if</span> <span class=o>(</span><span class=n>needsDepCheck</span><span class=o>)</span> <span class=o>{</span>
+        <span class=k>if</span> <span class=o>(</span><span class=n>filteredPds</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+            <span class=n>filteredPds</span> <span class=o>=</span> <span class=n>filterPropertyDescriptorsForDependencyCheck</span><span class=o>(</span><span class=n>bw</span><span class=o>,</span> <span class=n>mbd</span><span class=o>.</span><span class=na>allowCaching</span><span class=o>);</span>
+        <span class=o>}</span>
+        <span class=c1>// 依赖检查，对应 depends-on 属性
+</span><span class=c1></span>        <span class=n>checkDependencies</span><span class=o>(</span><span class=n>beanName</span><span class=o>,</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>filteredPds</span><span class=o>,</span> <span class=n>pvs</span><span class=o>);</span>
+    <span class=o>}</span>
+
+    <span class=c1>// &lt;5&gt; 将属性应用到 bean 中
+</span><span class=c1></span>    <span class=k>if</span> <span class=o>(</span><span class=n>pvs</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+        <span class=n>applyPropertyValues</span><span class=o>(</span><span class=n>beanName</span><span class=o>,</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>bw</span><span class=o>,</span> <span class=n>pvs</span><span class=o>);</span>
+    <span class=o>}</span>
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><p>这个方法的执行流程。如下：</p><ol><li><code>&lt;1></code>处 ，根据 <code>hasInstantiationAwareBeanPostProcessors</code> 属性来判断，是否需要在注入属性之前给 <code>InstantiationAwareBeanPostProcessors </code>最后一次改变 bean 的机会。<strong>此过程可以控制 Spring 是否继续进行属性填充</strong>。</li><li><code>&lt;2>处</code>，根据名称或类型解析相关依赖。</li><li><code>&lt;3>处</code>，进行 <code>BeanPostProcessor </code>处理。再次应用后置处理，用于动态修改属性列表 pvs 的内容</li><li><code>&lt;4>处</code>，依赖检测。</li><li><code>&lt;5>处</code>，将所有 <code>PropertyValues </code>中的属性，填充到 <code>BeanWrapper</code> 中。</li></ol><p>注意第3步，也就是根据名称或类型解析相关依赖（autowire）。该逻辑只会解析依赖，并不会将解析出的依赖立即注入到 bean 对象中。所有的属性值是在 <code>applyPropertyValues </code>方法中统一被注入到 bean 对象中的。</p><p>下面将对<code>populateBean</code> 方法中比较重要的几个方法调用进行分析，也就是第2步和第5步中的三个方法。</p><h3 id=22-autowirebyname方法分析>2.2 <code>autowireByName</code>方法分析</h3><p>该方法顾名思义根据<strong>属性名称</strong>，完成自动依赖注入的。代码如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>// AbstractAutowireCapableBeanFactory.java
+</span><span class=c1></span>
+<span class=kd>protected</span> <span class=kt>void</span> <span class=nf>autowireByName</span><span class=o>(</span><span class=n>String</span> <span class=n>beanName</span><span class=o>,</span> <span class=n>AbstractBeanDefinition</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>BeanWrapper</span> <span class=n>bw</span><span class=o>,</span> <span class=n>MutablePropertyValues</span> <span class=n>pvs</span><span class=o>)</span> <span class=o>{</span>
+     <span class=cm>/*
+</span><span class=cm>     * 获取非简单类型属性的名称，且该属性未被配置在配置文件中。这里从反面解释一下什么是&#34;非简单类型&#34;
+</span><span class=cm>     * 属性，我们先来看看 Spring 认为的&#34;简单类型&#34;属性有哪些，如下：
+</span><span class=cm>     *   1. CharSequence 接口的实现类，比如 String
+</span><span class=cm>     *   2. Enum
+</span><span class=cm>     *   3. Date
+</span><span class=cm>     *   4. URI/URL
+</span><span class=cm>     *   5. Number 的继承类，比如 Integer/Long
+</span><span class=cm>     *   6. byte/short/int... 等基本类型
+</span><span class=cm>     *   7. Locale
+</span><span class=cm>     *   8. 以上所有类型的数组形式，比如 String[]、Date[]、int[] 等等
+</span><span class=cm>     * 
+</span><span class=cm>     * 除了要求非简单类型的属性外，还要求属性未在配置文件中配置过，也就是 pvs.contains(pd.getName()) = false。
+</span><span class=cm>     */</span>
+    <span class=n>String</span><span class=o>[]</span> <span class=n>propertyNames</span> <span class=o>=</span> <span class=n>unsatisfiedNonSimpleProperties</span><span class=o>(</span><span class=n>mbd</span><span class=o>,</span> <span class=n>bw</span><span class=o>);</span>
+    <span class=k>for</span> <span class=o>(</span><span class=n>String</span> <span class=n>propertyName</span> <span class=o>:</span> <span class=n>propertyNames</span><span class=o>)</span> <span class=o>{</span>
+        <span class=c1>// 检测是否存在与 propertyName 相关的 bean 或 BeanDefinition。若存在，则调用 BeanFactory.getBean 方法获取 bean 实例
+</span><span class=c1></span>        <span class=k>if</span> <span class=o>(</span><span class=n>containsBean</span><span class=o>(</span><span class=n>propertyName</span><span class=o>))</span> <span class=o>{</span>
+            <span class=c1>// 从容器中获取相应的 bean 实例
+</span><span class=c1></span>            <span class=n>Object</span> <span class=n>bean</span> <span class=o>=</span> <span class=n>getBean</span><span class=o>(</span><span class=n>propertyName</span><span class=o>);</span>
+            <span class=c1>// 将解析出的 bean 存入到属性值列表（pvs）中
+</span><span class=c1></span>            <span class=n>pvs</span><span class=o>.</span><span class=na>add</span><span class=o>(</span><span class=n>propertyName</span><span class=o>,</span> <span class=n>bean</span><span class=o>);</span>
+            <span class=c1>// 属性依赖注入
+</span><span class=c1></span>            <span class=n>registerDependentBean</span><span class=o>(</span><span class=n>propertyName</span><span class=o>,</span> <span class=n>beanName</span><span class=o>);</span>
+            <span class=k>if</span> <span class=o>(</span><span class=n>logger</span><span class=o>.</span><span class=na>isTraceEnabled</span><span class=o>())</span> <span class=o>{</span>
+                <span class=n>logger</span><span class=o>.</span><span class=na>trace</span><span class=o>(</span><span class=s>&#34;Added autowiring by name from bean name &#39;&#34;</span> <span class=o>+</span> <span class=n>beanName</span> <span class=o>+</span>
+                        <span class=s>&#34;&#39; via property &#39;&#34;</span> <span class=o>+</span> <span class=n>propertyName</span> <span class=o>+</span> <span class=s>&#34;&#39; to bean named &#39;&#34;</span> <span class=o>+</span> <span class=n>propertyName</span> <span class=o>+</span> <span class=s>&#34;&#39;&#34;</span><span class=o>);</span>
+            <span class=o>}</span>
+        <span class=o>}</span> <span class=k>else</span> <span class=o>{</span>
+            <span class=k>if</span> <span class=o>(</span><span class=n>logger</span><span class=o>.</span><span class=na>isTraceEnabled</span><span class=o>())</span> <span class=o>{</span>
+                <span class=n>logger</span><span class=o>.</span><span class=na>trace</span><span class=o>(</span><span class=s>&#34;Not autowiring property &#39;&#34;</span> <span class=o>+</span> <span class=n>propertyName</span> <span class=o>+</span> <span class=s>&#34;&#39; of bean &#39;&#34;</span> <span class=o>+</span> <span class=n>beanName</span> <span class=o>+</span>
+                        <span class=s>&#34;&#39; by name: no matching bean found&#34;</span><span class=o>);</span>
+            <span class=o>}</span>
+        <span class=o>}</span>
+    <span class=o>}</span>
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><p><code>autowireByName</code> 方法的逻辑比较简单，该方法首先获取非简单类型属性的名称，然后再根据名称到容器中获取相应的 bean 实例，最后再将获取到的 bean 添加到属性列表中即可。</p><h3 id=23--autowirebytype-方法分析>2.3 <code>autowireByType </code>方法分析</h3><p>相较于 <code>autowireByName</code>，<code>autowireByType</code> 则要复杂一些，复杂之处在于解析依赖的过程。代码如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>// AbstractAutowireCapableBeanFactory.java
+</span><span class=c1></span>
+<span class=kd>protected</span> <span class=kt>void</span> <span class=nf>autowireByType</span><span class=o>(</span><span class=n>String</span> <span class=n>beanName</span><span class=o>,</span> <span class=n>AbstractBeanDefinition</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>BeanWrapper</span> <span class=n>bw</span><span class=o>,</span> <span class=n>MutablePropertyValues</span> <span class=n>pvs</span><span class=o>)</span> <span class=o>{</span>
+
+    <span class=c1>// 获取 TypeConverter 实例
+</span><span class=c1></span>    <span class=c1>// 使用自定义的 TypeConverter，用于取代默认的 PropertyEditor 机制
+</span><span class=c1></span>    <span class=n>TypeConverter</span> <span class=n>converter</span> <span class=o>=</span> <span class=n>getCustomTypeConverter</span><span class=o>();</span>
+    <span class=k>if</span> <span class=o>(</span><span class=n>converter</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+        <span class=n>converter</span> <span class=o>=</span> <span class=n>bw</span><span class=o>;</span>
+    <span class=o>}</span>
+
+    <span class=n>Set</span><span class=o>&lt;</span><span class=n>String</span><span class=o>&gt;</span> <span class=n>autowiredBeanNames</span> <span class=o>=</span> <span class=k>new</span> <span class=n>LinkedHashSet</span><span class=o>&lt;&gt;(</span><span class=n>4</span><span class=o>);</span>
+    <span class=c1>// 获取非简单类型的属性
+</span><span class=c1></span>    <span class=n>String</span><span class=o>[]</span> <span class=n>propertyNames</span> <span class=o>=</span> <span class=n>unsatisfiedNonSimpleProperties</span><span class=o>(</span><span class=n>mbd</span><span class=o>,</span> <span class=n>bw</span><span class=o>);</span>
+    <span class=k>for</span> <span class=o>(</span><span class=n>String</span> <span class=n>propertyName</span> <span class=o>:</span> <span class=n>propertyNames</span><span class=o>)</span> <span class=o>{</span>
+        <span class=k>try</span> <span class=o>{</span>
+            <span class=n>PropertyDescriptor</span> <span class=n>pd</span> <span class=o>=</span> <span class=n>bw</span><span class=o>.</span><span class=na>getPropertyDescriptor</span><span class=o>(</span><span class=n>propertyName</span><span class=o>);</span>
+            <span class=c1>// 如果属性类型为 Object，则忽略，不做解析
+</span><span class=c1></span>            <span class=k>if</span> <span class=o>(</span><span class=n>Object</span><span class=o>.</span><span class=na>class</span> <span class=o>!=</span> <span class=n>pd</span><span class=o>.</span><span class=na>getPropertyType</span><span class=o>())</span> <span class=o>{</span>
+                <span class=cm>/*
+</span><span class=cm>                 * 获取 setter 方法（write method）的参数信息，比如参数在参数列表中的
+</span><span class=cm>                 * 位置，参数类型，以及该参数所归属的方法等信息
+</span><span class=cm>                 */</span>
+                <span class=n>MethodParameter</span> <span class=n>methodParam</span> <span class=o>=</span> <span class=n>BeanUtils</span><span class=o>.</span><span class=na>getWriteMethodParameter</span><span class=o>(</span><span class=n>pd</span><span class=o>);</span>
+                <span class=kt>boolean</span> <span class=n>eager</span> <span class=o>=</span> <span class=o>!</span><span class=n>PriorityOrdered</span><span class=o>.</span><span class=na>class</span><span class=o>.</span><span class=na>isInstance</span><span class=o>(</span><span class=n>bw</span><span class=o>.</span><span class=na>getWrappedInstance</span><span class=o>());</span>
+                <span class=c1>// 创建依赖描述对象
+</span><span class=c1></span>                <span class=n>DependencyDescriptor</span> <span class=n>desc</span> <span class=o>=</span> <span class=k>new</span> <span class=n>AutowireByTypeDependencyDescriptor</span><span class=o>(</span><span class=n>methodParam</span><span class=o>,</span> <span class=n>eager</span><span class=o>);</span>
+                <span class=cm>/*
+</span><span class=cm>                 * 下面的方法用于解析依赖。过程比较复杂，先把这里看成一个黑盒，我们只要知道这
+</span><span class=cm>                 * 个方法可以帮我们解析出合适的依赖即可。
+</span><span class=cm>                 */</span>
+                <span class=n>Object</span> <span class=n>autowiredArgument</span> <span class=o>=</span> <span class=n>resolveDependency</span><span class=o>(</span><span class=n>desc</span><span class=o>,</span> <span class=n>beanName</span><span class=o>,</span> <span class=n>autowiredBeanNames</span><span class=o>,</span> <span class=n>converter</span><span class=o>);</span>
+                <span class=k>if</span> <span class=o>(</span><span class=n>autowiredArgument</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+                    <span class=c1>// 将解析出的 bean 存入到属性值列表（pvs）中
+</span><span class=c1></span>                    <span class=n>pvs</span><span class=o>.</span><span class=na>add</span><span class=o>(</span><span class=n>propertyName</span><span class=o>,</span> <span class=n>autowiredArgument</span><span class=o>);</span>
+                <span class=o>}</span>
+                <span class=c1>// 遍历 autowiredBeanName 数组
+</span><span class=c1></span>                <span class=k>for</span> <span class=o>(</span><span class=n>String</span> <span class=n>autowiredBeanName</span> <span class=o>:</span> <span class=n>autowiredBeanNames</span><span class=o>)</span> <span class=o>{</span>
+                    <span class=c1>// 属性依赖注入
+</span><span class=c1></span>                    <span class=n>registerDependentBean</span><span class=o>(</span><span class=n>autowiredBeanName</span><span class=o>,</span> <span class=n>beanName</span><span class=o>);</span>
+                    <span class=k>if</span> <span class=o>(</span><span class=n>logger</span><span class=o>.</span><span class=na>isTraceEnabled</span><span class=o>())</span> <span class=o>{</span>
+                        <span class=n>logger</span><span class=o>.</span><span class=na>trace</span><span class=o>(</span><span class=s>&#34;Autowiring by type from bean name &#39;&#34;</span> <span class=o>+</span> <span class=n>beanName</span> <span class=o>+</span> <span class=s>&#34;&#39; via property &#39;&#34;</span> <span class=o>+</span>
+                                <span class=n>propertyName</span> <span class=o>+</span> <span class=s>&#34;&#39; to bean named &#39;&#34;</span> <span class=o>+</span> <span class=n>autowiredBeanName</span> <span class=o>+</span> <span class=s>&#34;&#39;&#34;</span><span class=o>);</span>
+                    <span class=o>}</span>
+                <span class=o>}</span>
+                <span class=c1>// 清空 autowiredBeanName 数组
+</span><span class=c1></span>                <span class=n>autowiredBeanNames</span><span class=o>.</span><span class=na>clear</span><span class=o>();</span>
+            <span class=o>}</span>
+        <span class=o>}</span> <span class=k>catch</span> <span class=o>(</span><span class=n>BeansException</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+            <span class=k>throw</span> <span class=k>new</span> <span class=n>UnsatisfiedDependencyException</span><span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>getResourceDescription</span><span class=o>(),</span> <span class=n>beanName</span><span class=o>,</span> <span class=n>propertyName</span><span class=o>,</span> <span class=n>ex</span><span class=o>);</span>
+        <span class=o>}</span>
+    <span class=o>}</span>
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><p>和 autowireByName 一样，autowireByType 首先也是获取非简单类型属性的名称。然后再根据属性名获取属性描述符，并由属性描述符获取方法参数对象 MethodParameter，随后再根据 MethodParameter 对象获取依赖描述符对象，整个过程为 <code>beanName → PropertyDescriptor → MethodParameter → DependencyDescriptor</code>。在获取到依赖描述符对象后，再根据依赖描述符解析出合适的依赖。最后将解析出的结果存入属性列表 pvs 中即可。</p><p>相对于 <code>autowireByName</code> 方法而言，根据类型寻找相匹配的 bean 过程比较复杂。即<code>resolveDependency</code>方法，此方法的解析之后会补上。</p><h3 id=24-applypropertyvalues-方法分析>2.4 <code>applyPropertyValues</code> 方法分析</h3><p>获取的属性封装在 PropertyValues 的实例对象 <code>pvs</code> 中，并没有应用到已经实例化的 bean 中。因为在 Spring 配置文件中属性值都是以 String 类型进行配置的，所以 Spring 框架需要对 String 类型进行转换。除此之外，对于 ref 属性，这里还需要根据 ref 属性值解析依赖。而 <code>applyPropertyValues</code>方法，则是完成这一步骤的。代码如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>  1
+</span><span class=lnt>  2
+</span><span class=lnt>  3
+</span><span class=lnt>  4
+</span><span class=lnt>  5
+</span><span class=lnt>  6
+</span><span class=lnt>  7
+</span><span class=lnt>  8
+</span><span class=lnt>  9
+</span><span class=lnt> 10
+</span><span class=lnt> 11
+</span><span class=lnt> 12
+</span><span class=lnt> 13
+</span><span class=lnt> 14
+</span><span class=lnt> 15
+</span><span class=lnt> 16
+</span><span class=lnt> 17
+</span><span class=lnt> 18
+</span><span class=lnt> 19
+</span><span class=lnt> 20
+</span><span class=lnt> 21
+</span><span class=lnt> 22
+</span><span class=lnt> 23
+</span><span class=lnt> 24
+</span><span class=lnt> 25
+</span><span class=lnt> 26
+</span><span class=lnt> 27
+</span><span class=lnt> 28
+</span><span class=lnt> 29
+</span><span class=lnt> 30
+</span><span class=lnt> 31
+</span><span class=lnt> 32
+</span><span class=lnt> 33
+</span><span class=lnt> 34
+</span><span class=lnt> 35
+</span><span class=lnt> 36
+</span><span class=lnt> 37
+</span><span class=lnt> 38
+</span><span class=lnt> 39
+</span><span class=lnt> 40
+</span><span class=lnt> 41
+</span><span class=lnt> 42
+</span><span class=lnt> 43
+</span><span class=lnt> 44
+</span><span class=lnt> 45
+</span><span class=lnt> 46
+</span><span class=lnt> 47
+</span><span class=lnt> 48
+</span><span class=lnt> 49
+</span><span class=lnt> 50
+</span><span class=lnt> 51
+</span><span class=lnt> 52
+</span><span class=lnt> 53
+</span><span class=lnt> 54
+</span><span class=lnt> 55
+</span><span class=lnt> 56
+</span><span class=lnt> 57
+</span><span class=lnt> 58
+</span><span class=lnt> 59
+</span><span class=lnt> 60
+</span><span class=lnt> 61
+</span><span class=lnt> 62
+</span><span class=lnt> 63
+</span><span class=lnt> 64
+</span><span class=lnt> 65
+</span><span class=lnt> 66
+</span><span class=lnt> 67
+</span><span class=lnt> 68
+</span><span class=lnt> 69
+</span><span class=lnt> 70
+</span><span class=lnt> 71
+</span><span class=lnt> 72
+</span><span class=lnt> 73
+</span><span class=lnt> 74
+</span><span class=lnt> 75
+</span><span class=lnt> 76
+</span><span class=lnt> 77
+</span><span class=lnt> 78
+</span><span class=lnt> 79
+</span><span class=lnt> 80
+</span><span class=lnt> 81
+</span><span class=lnt> 82
+</span><span class=lnt> 83
+</span><span class=lnt> 84
+</span><span class=lnt> 85
+</span><span class=lnt> 86
+</span><span class=lnt> 87
+</span><span class=lnt> 88
+</span><span class=lnt> 89
+</span><span class=lnt> 90
+</span><span class=lnt> 91
+</span><span class=lnt> 92
+</span><span class=lnt> 93
+</span><span class=lnt> 94
+</span><span class=lnt> 95
+</span><span class=lnt> 96
+</span><span class=lnt> 97
+</span><span class=lnt> 98
+</span><span class=lnt> 99
+</span><span class=lnt>100
+</span><span class=lnt>101
+</span><span class=lnt>102
+</span><span class=lnt>103
+</span><span class=lnt>104
+</span><span class=lnt>105
+</span><span class=lnt>106
+</span><span class=lnt>107
+</span><span class=lnt>108
+</span><span class=lnt>109
+</span><span class=lnt>110
+</span><span class=lnt>111
+</span><span class=lnt>112
+</span><span class=lnt>113
+</span><span class=lnt>114
+</span><span class=lnt>115
+</span><span class=lnt>116
+</span><span class=lnt>117
+</span><span class=lnt>118
+</span><span class=lnt>119
+</span><span class=lnt>120
+</span><span class=lnt>121
+</span><span class=lnt>122
+</span><span class=lnt>123
+</span><span class=lnt>124
+</span><span class=lnt>125
+</span><span class=lnt>126
+</span><span class=lnt>127
+</span><span class=lnt>128
+</span><span class=lnt>129
+</span><span class=lnt>130
+</span><span class=lnt>131
+</span><span class=lnt>132
+</span><span class=lnt>133
+</span><span class=lnt>134
+</span><span class=lnt>135
+</span><span class=lnt>136
+</span><span class=lnt>137
+</span><span class=lnt>138
+</span><span class=lnt>139
+</span><span class=lnt>140
+</span><span class=lnt>141
+</span><span class=lnt>142
+</span><span class=lnt>143
+</span><span class=lnt>144
+</span><span class=lnt>145
+</span><span class=lnt>146
+</span><span class=lnt>147
+</span><span class=lnt>148
+</span><span class=lnt>149
+</span><span class=lnt>150
+</span><span class=lnt>151
+</span><span class=lnt>152
+</span><span class=lnt>153
+</span><span class=lnt>154
+</span><span class=lnt>155
+</span><span class=lnt>156
+</span><span class=lnt>157
+</span><span class=lnt>158
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>// AbstractAutowireCapableBeanFactory.java
+</span><span class=c1></span>
+<span class=kd>protected</span> <span class=kt>void</span> <span class=nf>applyPropertyValues</span><span class=o>(</span><span class=n>String</span> <span class=n>beanName</span><span class=o>,</span> <span class=n>BeanDefinition</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>BeanWrapper</span> <span class=n>bw</span><span class=o>,</span> <span class=n>PropertyValues</span> <span class=n>pvs</span><span class=o>)</span> <span class=o>{</span>
+    <span class=k>if</span> <span class=o>(</span><span class=n>pvs</span><span class=o>.</span><span class=na>isEmpty</span><span class=o>())</span> <span class=o>{</span>
+        <span class=k>return</span><span class=o>;</span>
+    <span class=o>}</span>
+
+    <span class=c1>// 设置 BeanWrapperImpl 的 SecurityContext 属性
+</span><span class=c1></span>    <span class=k>if</span> <span class=o>(</span><span class=n>System</span><span class=o>.</span><span class=na>getSecurityManager</span><span class=o>()</span> <span class=o>!=</span> <span class=kc>null</span> <span class=o>&amp;&amp;</span> <span class=n>bw</span> <span class=k>instanceof</span> <span class=n>BeanWrapperImpl</span><span class=o>)</span> <span class=o>{</span>
+        <span class=o>((</span><span class=n>BeanWrapperImpl</span><span class=o>)</span> <span class=n>bw</span><span class=o>).</span><span class=na>setSecurityContext</span><span class=o>(</span><span class=n>getAccessControlContext</span><span class=o>());</span>
+    <span class=o>}</span>
+
+    <span class=c1>// MutablePropertyValues 类型属性
+</span><span class=c1></span>    <span class=n>MutablePropertyValues</span> <span class=n>mpvs</span> <span class=o>=</span> <span class=kc>null</span><span class=o>;</span>
+
+    <span class=c1>// 原始类型
+</span><span class=c1></span>    <span class=n>List</span><span class=o>&lt;</span><span class=n>PropertyValue</span><span class=o>&gt;</span> <span class=n>original</span><span class=o>;</span>
+    <span class=c1>// 获得 original
+</span><span class=c1></span>    <span class=k>if</span> <span class=o>(</span><span class=n>pvs</span> <span class=k>instanceof</span> <span class=n>MutablePropertyValues</span><span class=o>)</span> <span class=o>{</span>
+        <span class=n>mpvs</span> <span class=o>=</span> <span class=o>(</span><span class=n>MutablePropertyValues</span><span class=o>)</span> <span class=n>pvs</span><span class=o>;</span>
+        <span class=c1>// 属性值已经转换
+</span><span class=c1></span>        <span class=k>if</span> <span class=o>(</span><span class=n>mpvs</span><span class=o>.</span><span class=na>isConverted</span><span class=o>())</span> <span class=o>{</span>
+            <span class=c1>// Shortcut: use the pre-converted values as-is.
+</span><span class=c1></span>            <span class=k>try</span> <span class=o>{</span>
+                <span class=c1>// 为实例化对象设置属性值 ，依赖注入真真正正地实现在此！！！！！
+</span><span class=c1></span>                <span class=n>bw</span><span class=o>.</span><span class=na>setPropertyValues</span><span class=o>(</span><span class=n>mpvs</span><span class=o>);</span>
+                <span class=k>return</span><span class=o>;</span>
+            <span class=o>}</span> <span class=k>catch</span> <span class=o>(</span><span class=n>BeansException</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+                <span class=k>throw</span> <span class=k>new</span> <span class=n>BeanCreationException</span><span class=o>(</span>
+                        <span class=n>mbd</span><span class=o>.</span><span class=na>getResourceDescription</span><span class=o>(),</span> <span class=n>beanName</span><span class=o>,</span> <span class=s>&#34;Error setting property values&#34;</span><span class=o>,</span> <span class=n>ex</span><span class=o>);</span>
+            <span class=o>}</span>
+        <span class=o>}</span>
+        <span class=n>original</span> <span class=o>=</span> <span class=n>mpvs</span><span class=o>.</span><span class=na>getPropertyValueList</span><span class=o>();</span>
+    <span class=o>}</span> <span class=k>else</span> <span class=o>{</span>
+        <span class=c1>// 如果 pvs 不是 MutablePropertyValues 类型，则直接使用原始类型
+</span><span class=c1></span>        <span class=n>original</span> <span class=o>=</span> <span class=n>Arrays</span><span class=o>.</span><span class=na>asList</span><span class=o>(</span><span class=n>pvs</span><span class=o>.</span><span class=na>getPropertyValues</span><span class=o>());</span>
+    <span class=o>}</span>
+
+    <span class=c1>// 获取 TypeConverter = 获取用户自定义的类型转换
+</span><span class=c1></span>    <span class=n>TypeConverter</span> <span class=n>converter</span> <span class=o>=</span> <span class=n>getCustomTypeConverter</span><span class=o>();</span>
+    <span class=k>if</span> <span class=o>(</span><span class=n>converter</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+        <span class=n>converter</span> <span class=o>=</span> <span class=n>bw</span><span class=o>;</span>
+    <span class=o>}</span>
+
+    <span class=c1>// 获取对应的解析器
+</span><span class=c1></span>    <span class=n>BeanDefinitionValueResolver</span> <span class=n>valueResolver</span> <span class=o>=</span> <span class=k>new</span> <span class=n>BeanDefinitionValueResolver</span><span class=o>(</span><span class=k>this</span><span class=o>,</span> <span class=n>beanName</span><span class=o>,</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>converter</span><span class=o>);</span>
+
+    <span class=c1>// Create a deep copy, resolving any references for values.
+</span><span class=c1></span>    <span class=n>List</span><span class=o>&lt;</span><span class=n>PropertyValue</span><span class=o>&gt;</span> <span class=n>deepCopy</span> <span class=o>=</span> <span class=k>new</span> <span class=n>ArrayList</span><span class=o>&lt;&gt;(</span><span class=n>original</span><span class=o>.</span><span class=na>size</span><span class=o>());</span>
+    <span class=kt>boolean</span> <span class=n>resolveNecessary</span> <span class=o>=</span> <span class=kc>false</span><span class=o>;</span>
+    <span class=c1>// 遍历属性，将属性转换为对应类的对应属性的类型
+</span><span class=c1></span>    <span class=k>for</span> <span class=o>(</span><span class=n>PropertyValue</span> <span class=n>pv</span> <span class=o>:</span> <span class=n>original</span><span class=o>)</span> <span class=o>{</span>
+        <span class=c1>// 属性值不需要转换
+</span><span class=c1></span>        <span class=k>if</span> <span class=o>(</span><span class=n>pv</span><span class=o>.</span><span class=na>isConverted</span><span class=o>())</span> <span class=o>{</span>
+            <span class=n>deepCopy</span><span class=o>.</span><span class=na>add</span><span class=o>(</span><span class=n>pv</span><span class=o>);</span>
+        <span class=c1>// 属性值需要转换
+</span><span class=c1></span>        <span class=o>}</span> <span class=k>else</span> <span class=o>{</span>
+            <span class=n>String</span> <span class=n>propertyName</span> <span class=o>=</span> <span class=n>pv</span><span class=o>.</span><span class=na>getName</span><span class=o>();</span>
+            <span class=n>Object</span> <span class=n>originalValue</span> <span class=o>=</span> <span class=n>pv</span><span class=o>.</span><span class=na>getValue</span><span class=o>();</span> <span class=c1>// 原始的属性值，即转换之前的属性值
+</span><span class=c1></span>            <span class=cm>/*
+</span><span class=cm>             * 解析属性值。举例说明，先看下面的配置：
+</span><span class=cm>             * 
+</span><span class=cm>             *   &lt;bean id=&#34;macbook&#34; class=&#34;MacBookPro&#34;&gt;
+</span><span class=cm>             *       &lt;property name=&#34;manufacturer&#34; value=&#34;Apple&#34;/&gt;
+</span><span class=cm>             *       &lt;property name=&#34;width&#34; value=&#34;280&#34;/&gt;
+</span><span class=cm>             *       &lt;property name=&#34;cpu&#34; ref=&#34;cpu&#34;/&gt;
+</span><span class=cm>             *       &lt;property name=&#34;interface&#34;&gt;
+</span><span class=cm>             *           &lt;list&gt;
+</span><span class=cm>             *               &lt;value&gt;USB&lt;/value&gt;
+</span><span class=cm>             *               &lt;value&gt;HDMI&lt;/value&gt;
+</span><span class=cm>             *               &lt;value&gt;Thunderbolt&lt;/value&gt;
+</span><span class=cm>             *           &lt;/list&gt;
+</span><span class=cm>             *       &lt;/property&gt;
+</span><span class=cm>             *   &lt;/bean&gt;
+</span><span class=cm>             *
+</span><span class=cm>             * 上面是一款电脑的配置信息，每个 property 配置经过下面的方法解析后，返回如下结果：
+</span><span class=cm>             *   propertyName = &#34;manufacturer&#34;, resolvedValue = &#34;Apple&#34;
+</span><span class=cm>             *   propertyName = &#34;width&#34;, resolvedValue = &#34;280&#34;
+</span><span class=cm>             *   propertyName = &#34;cpu&#34;, resolvedValue = &#34;CPU@1234&#34;  注：resolvedValue 是一个对象
+</span><span class=cm>             *   propertyName = &#34;interface&#34;, resolvedValue = [&#34;USB&#34;, &#34;HDMI&#34;, &#34;Thunderbolt&#34;]
+</span><span class=cm>             *
+</span><span class=cm>             * 如上所示，resolveValueIfNecessary 会将 ref 解析为具体的对象，将 &lt;list&gt; 
+</span><span class=cm>             * 标签转换为 List 对象等。对于 int 类型的配置，这里并未做转换，所以 
+</span><span class=cm>             * width = &#34;280&#34;，还是字符串。除了解析上面几种类型，该方法还会解析 &lt;set/&gt;、
+</span><span class=cm>             * &lt;map/&gt;、&lt;array/&gt; 等集合配置
+</span><span class=cm>             */</span>
+            
+            <span class=n>Object</span> <span class=n>resolvedValue</span> <span class=o>=</span> <span class=n>valueResolver</span><span class=o>.</span><span class=na>resolveValueIfNecessary</span><span class=o>(</span><span class=n>pv</span><span class=o>,</span> <span class=n>originalValue</span><span class=o>);</span> 
+            <span class=n>Object</span> <span class=n>convertedValue</span> <span class=o>=</span> <span class=n>resolvedValue</span><span class=o>;</span> 
+            
+            <span class=cm>/*
+</span><span class=cm>             * convertible 表示属性值是否可转换，由两个条件合成而来。第一个条件不难理解，解释
+</span><span class=cm>             * 一下第二个条件。第二个条件用于检测 propertyName 是否是 nested 或者 indexed，
+</span><span class=cm>             * 直接举例说明吧：
+</span><span class=cm>             * 
+</span><span class=cm>             *   public class Room {
+</span><span class=cm>             *       private Door door = new Door();
+</span><span class=cm>             *   }
+</span><span class=cm>             *
+</span><span class=cm>             * room 对象里面包含了 door 对象，如果我们想向 door 对象中注入属性值，则可以这样配置：
+</span><span class=cm>             *
+</span><span class=cm>             *   &lt;bean id=&#34;room&#34; class=&#34;xyz.coolblog.Room&#34;&gt;
+</span><span class=cm>             *      &lt;property name=&#34;door.width&#34; value=&#34;123&#34;/&gt;
+</span><span class=cm>             *   &lt;/bean&gt;
+</span><span class=cm>             * 
+</span><span class=cm>             * isNestedOrIndexedProperty 会根据 propertyName 中是否包含 . 或 [  返回 
+</span><span class=cm>             * true 和 false。包含则返回 true，否则返回 false。关于 nested 类型的属性，我
+</span><span class=cm>             * 没在实践中用过，所以不知道上面举的例子是不是合理。若不合理，欢迎指正，也请多多指教。
+</span><span class=cm>             * 关于 nested 类型的属性，大家还可以参考 Spring 的官方文档：
+</span><span class=cm>             *     https://docs.spring.io/spring/docs/4.3.17.RELEASE/spring-framework-reference/htmlsingle/#beans-beans-conventions
+</span><span class=cm>             */</span>
+            <span class=kt>boolean</span> <span class=n>convertible</span> <span class=o>=</span> <span class=n>bw</span><span class=o>.</span><span class=na>isWritableProperty</span><span class=o>(</span><span class=n>propertyName</span><span class=o>)</span> <span class=o>&amp;&amp;</span>
+                    <span class=o>!</span><span class=n>PropertyAccessorUtils</span><span class=o>.</span><span class=na>isNestedOrIndexedProperty</span><span class=o>(</span><span class=n>propertyName</span><span class=o>);</span> 
+            <span class=c1>// 对于一般的属性，convertible 通常为 true
+</span><span class=c1></span>            <span class=k>if</span> <span class=o>(</span><span class=n>convertible</span><span class=o>)</span> <span class=o>{</span>
+                <span class=c1>// 对属性值的类型进行转换，比如将 String 类型的属性值 &#34;123&#34; 转为 Integer 类型的 123
+</span><span class=c1></span>                <span class=n>convertedValue</span> <span class=o>=</span> <span class=n>convertForProperty</span><span class=o>(</span><span class=n>resolvedValue</span><span class=o>,</span> <span class=n>propertyName</span><span class=o>,</span> <span class=n>bw</span><span class=o>,</span> <span class=n>converter</span><span class=o>);</span>
+            <span class=o>}</span>
+            
+            <span class=cm>/*
+</span><span class=cm>             * 如果 originalValue 是通过 autowireByType 或 autowireByName 解析而来，
+</span><span class=cm>             * 那么此处条件成立，即 (resolvedValue == originalValue) = true
+</span><span class=cm>             */</span>
+            <span class=k>if</span> <span class=o>(</span><span class=n>resolvedValue</span> <span class=o>==</span> <span class=n>originalValue</span><span class=o>)</span> <span class=o>{</span>
+                <span class=k>if</span> <span class=o>(</span><span class=n>convertible</span><span class=o>)</span> <span class=o>{</span>
+                    <span class=c1>// 将 convertedValue 设置到 pv 中，后续再次创建同一个 bean 时，就无需再次进行转换了
+</span><span class=c1></span>                    <span class=n>pv</span><span class=o>.</span><span class=na>setConvertedValue</span><span class=o>(</span><span class=n>convertedValue</span><span class=o>);</span>
+                <span class=o>}</span>
+                <span class=n>deepCopy</span><span class=o>.</span><span class=na>add</span><span class=o>(</span><span class=n>pv</span><span class=o>);</span>
+            <span class=cm>/*
+</span><span class=cm>             * 如果原始值 originalValue 是 TypedStringValue，且转换后的值 
+</span><span class=cm>             * convertedValue 不是 Collection 或数组类型，则将转换后的值存入到 pv 中。
+</span><span class=cm>             */</span>
+            <span class=o>}</span> <span class=k>else</span> <span class=k>if</span> <span class=o>(</span><span class=n>convertible</span> <span class=o>&amp;&amp;</span> <span class=n>originalValue</span> <span class=k>instanceof</span> <span class=n>TypedStringValue</span> <span class=o>&amp;&amp;</span>
+                    <span class=o>!((</span><span class=n>TypedStringValue</span><span class=o>)</span> <span class=n>originalValue</span><span class=o>).</span><span class=na>isDynamic</span><span class=o>()</span> <span class=o>&amp;&amp;</span>
+                    <span class=o>!(</span><span class=n>convertedValue</span> <span class=k>instanceof</span> <span class=n>Collection</span> <span class=o>||</span> <span class=n>ObjectUtils</span><span class=o>.</span><span class=na>isArray</span><span class=o>(</span><span class=n>convertedValue</span><span class=o>)))</span> <span class=o>{</span>
+                <span class=n>pv</span><span class=o>.</span><span class=na>setConvertedValue</span><span class=o>(</span><span class=n>convertedValue</span><span class=o>);</span>
+                <span class=n>deepCopy</span><span class=o>.</span><span class=na>add</span><span class=o>(</span><span class=n>pv</span><span class=o>);</span>
+            <span class=o>}</span> <span class=k>else</span> <span class=o>{</span>
+                <span class=n>resolveNecessary</span> <span class=o>=</span> <span class=kc>true</span><span class=o>;</span>
+                <span class=c1>// 重新封装属性的值
+</span><span class=c1></span>                <span class=n>deepCopy</span><span class=o>.</span><span class=na>add</span><span class=o>(</span><span class=k>new</span> <span class=n>PropertyValue</span><span class=o>(</span><span class=n>pv</span><span class=o>,</span> <span class=n>convertedValue</span><span class=o>));</span>
+            <span class=o>}</span>
+        <span class=o>}</span>
+    <span class=o>}</span>
+    <span class=c1>// 标记属性值已经转换过
+</span><span class=c1></span>    <span class=k>if</span> <span class=o>(</span><span class=n>mpvs</span> <span class=o>!=</span> <span class=kc>null</span> <span class=o>&amp;&amp;</span> <span class=o>!</span><span class=n>resolveNecessary</span><span class=o>)</span> <span class=o>{</span>
+        <span class=n>mpvs</span><span class=o>.</span><span class=na>setConverted</span><span class=o>();</span>
+    <span class=o>}</span>
+
+    <span class=c1>// 进行属性依赖注入，依赖注入的真真正正实现依赖的注入方法在此！！！
+</span><span class=c1></span>    <span class=k>try</span> <span class=o>{</span>
+        <span class=n>bw</span><span class=o>.</span><span class=na>setPropertyValues</span><span class=o>(</span><span class=k>new</span> <span class=n>MutablePropertyValues</span><span class=o>(</span><span class=n>deepCopy</span><span class=o>));</span>
+    <span class=o>}</span> <span class=k>catch</span> <span class=o>(</span><span class=n>BeansException</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+        <span class=k>throw</span> <span class=k>new</span> <span class=n>BeanCreationException</span><span class=o>(</span>
+                <span class=n>mbd</span><span class=o>.</span><span class=na>getResourceDescription</span><span class=o>(),</span> <span class=n>beanName</span><span class=o>,</span> <span class=s>&#34;Error setting property values&#34;</span><span class=o>,</span> <span class=n>ex</span><span class=o>);</span>
+    <span class=o>}</span>
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><p>上面方面的流程如下：</p><ol><li>检测属性值列表是否已转换过的，若转换过，则直接填充属性，无需再次转换。</li><li>遍历属性值列表 pvs，解析原始值 originalValue，得到解析值 resolvedValue。</li><li>对解析后的属性值 resolvedValue 进行类型转换。</li><li>将类型转换后的属性值设置到 PropertyValue 对象中，并将 PropertyValue 对象存入 deepCopy 集合中</li><li>将 deepCopy 中的属性信息注入到 bean 对象中。</li></ol><h2 id=参考>参考</h2><ul><li><a href=https://book.douban.com/subject/25866350/ target=_blank rel="noopener noreffer">《Spring 源码深度解析》- 郝佳著</a></li><li><a href=[http://www.tianxiaobo.com/2018/06/11/Spring-IOC-%E5%AE%B9%E5%99%A8%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E5%A1%AB%E5%85%85%E5%B1%9E%E6%80%A7%E5%88%B0-bean-%E5%8E%9F%E5%A7%8B%E5%AF%B9%E8%B1%A1/#23-autowirebytype-%E6%96%B9%E6%B3%95%E5%88%86%E6%9E%90]%28http://www.tianxiaobo.com/2018/06/11/Spring-IOC-%e5%ae%b9%e5%99%a8%e6%ba%90%e7%a0%81%e5%88%86%e6%9e%90-%e5%a1%ab%e5%85%85%e5%b1%9e%e6%80%a7%e5%88%b0-bean-%e5%8e%9f%e5%a7%8b%e5%af%b9%e8%b1%a1/#23-autowirebytype-%e6%96%b9%e6%b3%95%e5%88%86%e6%9e%90%29 rel="noopener noreffer">Spring IOC 容器源码分析 - 填充属性到 bean 原始对象</a></li></ul></div><div class=post-footer id=post-footer><div class=post-info><div class=post-info-line><div class=post-info-mod><span>本文于 2020-05-03 更新</span></div><div class=post-info-license></div></div><div class=post-info-line><div class=post-info-md><span><a class=link-to-markdown href=/posts/ioc-createbean-3/index.md target=_blank>阅读原始文档</a></span></div><div class=post-info-share><span><a href=javascript:void(0); title="分享到 微博" data-sharer=weibo data-url=https://cool-sen.github.io/posts/ioc-createbean-3/ data-title=创建Bean-属性填充><i class="fab fa-weibo fa-fw"></i></a><a href=javascript:void(0); title="分享到 百度" data-sharer=baidu data-url=https://cool-sen.github.io/posts/ioc-createbean-3/ data-title=创建Bean-属性填充><i class="loveit it-baidu-fill"></i></a><a href=javascript:void(0); title="分享到 Evernote" data-sharer=evernote data-url=https://cool-sen.github.io/posts/ioc-createbean-3/ data-title=创建Bean-属性填充><i class="fab fa-evernote fa-fw"></i></a></span></div></div></div><div class=post-info-more><section><i class="fas fa-tags fa-fw"></i>&nbsp;<a href=/tags/spring>Spring</a>,&nbsp;<a href=/tags/ioc>IOC</a></section><section><span><a href=javascript:window.history.back();>返回</a></span>&nbsp;|&nbsp;<span><a href=/>主页</a></span></section></div><div class=post-nav><a href=/posts/ioc-createbean-2/ class=prev rel=prev title=创建bean的实例><i class="fas fa-angle-left fa-fw"></i>创建bean的实例</a></div></div><div class=comment><div id=valine></div><script>document.addEventListener("DOMContentLoaded",function(event){new Valine({el:'#valine',appId:'EVeKQGJoyzwUXAUhbwnrWRef-gzGzoHsz',appKey:'YMah0NIRauENVCUV8o5vhPMN',placeholder:'说点什么吧...',verify:true,avatar:'mm',pageSize:10,lang:'en',visitor:true,recordIP:true,});});</script><noscript>Please enable JavaScript to view the <a href=https://valine.js.org/>comments powered by Valine.</a></noscript></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line>由 <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> 强力驱动 | 主题 - <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer"><i class="far fa-heart fa-fw"></i>LoveIt</a></div><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2019 - 2020</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=/ target=_blank>shuaisenma</a></span>&nbsp;|&nbsp;<span class=license><a rel="license external nofollow noopener noreffer" href=https://creativecommons.org/licenses/by-nc/4.0/ target=_blank>CC BY-NC 4.0</a></span></div></div></footer></div><a href=# class="dynamic-to-top animated faster" id=dynamic-to-top><i class="fas fa-chevron-up fa-fw"></i></a><script>document.addEventListener('DOMContentLoaded',function(){lightGallery(document.getElementById('content'),{selector:'.lightgallery',speed:400,hideBarsDelay:2000,thumbnail:true,exThumbImage:'data-thumbnail',thumbWidth:80,thumbContHeight:80,});});</script><link rel=stylesheet href=/lib/valine/valine.css><link rel=stylesheet href=/lib/iconfont/iconfont.min.css><link rel=stylesheet href=/lib/lightgallery/lightgallery.min.css><script src=https://cdn.staticfile.org/valine/1.3.10/Valine.min.js></script><script src=https://cdn.staticfile.org/smooth-scroll/16.1.0/smooth-scroll.polyfills.min.js></script><script src=https://cdn.staticfile.org/lazysizes/5.2.0/lazysizes.min.js></script><script src=/lib/sharer/sharer.min.js></script><script src=/lib/lightgallery/lightgallery.min.js></script><script src=/lib/lightgallery/lg-thumbnail.min.js></script><script src=/lib/lightgallery/lg-zoom.min.js></script><script src=/js/theme.min.js></script><script type=application/javascript>var doNotTrack=false;if(!doNotTrack){window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;ga('create','UA-105751499-1','auto');ga('set','anonymizeIp',true);ga('send','pageview');}</script><script async src=https://www.google-analytics.com/analytics.js></script></body></html>

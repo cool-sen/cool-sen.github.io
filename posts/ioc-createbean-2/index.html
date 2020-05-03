@@ -1,0 +1,1111 @@
+<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta http-equiv=x-ua-compatible content="IE=edge, chrome=1"><title>创建bean的实例 | Recording</title><meta name=Description content="recording my life"><meta property="og:title" content="创建bean的实例"><meta property="og:description" content="1 简介 本文将详细分析doCreateBean方法中的一个重要的调用，即createBeanInstance方法。先来了解一下方法的大致脉络。"><meta property="og:type" content="article"><meta property="og:url" content="https://cool-sen.github.io/posts/ioc-createbean-2/"><meta property="article:published_time" content="2020-05-02T17:10:04+08:00"><meta property="article:modified_time" content="2020-05-02T17:10:04+08:00"><meta name=twitter:card content="summary"><meta name=twitter:title content="创建bean的实例"><meta name=twitter:description content="1 简介 本文将详细分析doCreateBean方法中的一个重要的调用，即createBeanInstance方法。先来了解一下方法的大致脉络。"><meta name=theme-color content="#ffffff"><meta name=msapplication-TileColor content="#da532c"><link rel=canonical href=https://cool-sen.github.io/posts/ioc-createbean-2/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><link rel=prev href=https://cool-sen.github.io/posts/ioc-create-bean/><link rel=next href=https://cool-sen.github.io/posts/ioc-createbean-3/><link href=https://cdn.staticfile.org/font-awesome/5.12.1/css/all.min.css rel=stylesheet><link href=https://cdn.staticfile.org/animate.css/3.7.2/animate.css rel=stylesheet><link rel=stylesheet href=/css/style.min.css><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"创建bean的实例","inLanguage":"zh-CN","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/cool-sen.github.io\/posts\/ioc-createbean-2\/"},"image":{"@type":"ImageObject","url":"https:\/\/cool-sen.github.io\/","width":800,"height":600},"genre":"posts","keywords":"Spring, IOC","wordcount":6480,"url":"https:\/\/cool-sen.github.io\/posts\/ioc-createbean-2\/","datePublished":"2020-05-02","dateModified":"2020-05-02","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"ZhaoQiang","logo":{"@type":"ImageObject","url":"https:\/\/cool-sen.github.io\/","width":127,"height":40}},"author":{"@type":"Person","name":"shuaisenma"},"description":""}</script></head><body><script>if(!window.localStorage||!window.localStorage.getItem('theme')){window.isDark=window.matchMedia('(prefers-color-scheme: dark)').matches;}else{window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';}
+window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><header class=desktop id=header-desktop><div class=header-wrapper><div class=header-title><a href=/>Recording</a></div><div class=menu><a class=menu-item href=/posts rel="noopener noreffer">文章</a><a class=menu-item href=/tags rel="noopener noreffer">标签</a><a class=menu-item href=/categories rel="noopener noreffer">分类</a><a class=menu-item href=/about rel="noopener noreffer">关于</a><span class=menu-item>|</span>
+<a href=javascript:void(0); class="menu-item theme-switch" title=切换主题><i class="fas fa-adjust fa-fw"></i></a></div></div></header><header class=mobile id=header-mobile><div class=header-wrapper><div class=header-container><div class=header-title><a href=/>Recording</a></div><div class=menu-toggle id=menu-toggle-mobile><span></span><span></span><span></span></div></div><div class=menu id=menu-mobile><a class=menu-item href=/posts rel="noopener noreffer">文章</a><a class=menu-item href=/tags rel="noopener noreffer">标签</a><a class=menu-item href=/categories rel="noopener noreffer">分类</a><a class=menu-item href=/about rel="noopener noreffer">关于</a><a href=javascript:void(0); class="menu-item theme-switch" title=切换主题>
+<i class="fas fa-adjust fa-fw"></i></a></div></div></header><script>window.desktopHeaderMode="fixed";window.mobileHeaderMode="auto";</script><main class=main><div class=container><article class="page single"><h1 class="single-title animated flipInX">创建bean的实例</h1><div class=post-meta><div class=post-meta-line><span class=post-author><a href=/ title=Author rel="noopener noreffer author" class=author><i class="fas fa-user-circle fa-fw"></i>shuaisenma</a>
+</span>&nbsp;
+<span class=post-category>收录于<a href=/categories/spring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90>
+<i class="far fa-folder fa-fw"></i>Spring源码分析</a></span></div><div class=post-meta-line><i class="far fa-calendar-alt fa-fw"></i><time datetime=2020-05-02>2020-05-02</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>约 6480 字&nbsp;
+<i class="far fa-clock fa-fw"></i>预计阅读 13 分钟&nbsp;<span id=/posts/ioc-createbean-2/ class=leancloud_visitors data-flag-title=创建bean的实例>
+<i class="far fa-eye fa-fw"></i><span class=leancloud-visitors-count></span>&nbsp;次阅读
+</span>&nbsp;</div></div><div class=toc id=toc-auto><h2 class=toc-title>目录</h2><div class="toc-content always-active" id=toc-content-auto></div></div><div class=toc id=toc-static><details><summary><div class=toc-title><span>目录</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=toc-content id=toc-content-static><nav id=TableOfContents><ul><li><a href=#1-简介>1 简介</a></li><li><a href=#2-通过supplier-回调创建-bean-对象>2 通过Supplier 回调创建 bean 对象</a><ul><li><a href=#21-supplier介绍>2.1 <code>Supplier</code>介绍</a></li><li><a href=#22-supplier-回调>2.2 Supplier 回调</a></li></ul></li><li><a href=#3-通过构造方法自动注入创建-bean-对象>3 通过构造方法自动注入创建 bean 对象</a></li><li><a href=#4--instantiate方法>4 <code>instantiate</code>方法</a><ul><li><a href=#41-反射创建-bean-对象>4.1 反射创建 Bean 对象</a></li><li><a href=#42-cglib-创建-bean-对象>4.2 CGLIB 创建 Bean 对象</a></li></ul></li><li><a href=#小结>小结</a></li></ul></nav></div></details></div><div class=content id=content><h2 id=1-简介>1 简介</h2><p>本文将详细分析<code>doCreateBean</code>方法中的一个重要的调用，即<code>createBeanInstance</code>方法。先来了解一下方法的大致脉络。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span><span class=lnt>77
+</span><span class=lnt>78
+</span><span class=lnt>79
+</span><span class=lnt>80
+</span><span class=lnt>81
+</span><span class=lnt>82
+</span><span class=lnt>83
+</span><span class=lnt>84
+</span><span class=lnt>85
+</span><span class=lnt>86
+</span><span class=lnt>87
+</span><span class=lnt>88
+</span><span class=lnt>89
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>// AbstractAutowireCapableBeanFactory.java
+</span><span class=c1></span>
+<span class=kd>protected</span> <span class=n>BeanWrapper</span> <span class=nf>createBeanInstance</span><span class=o>(</span><span class=n>String</span> <span class=n>beanName</span><span class=o>,</span> <span class=n>RootBeanDefinition</span> <span class=n>mbd</span><span class=o>,</span> <span class=nd>@Nullable</span> <span class=n>Object</span><span class=o>[]</span> <span class=n>args</span><span class=o>)</span> <span class=o>{</span>
+    
+    <span class=c1>// 解析 bean ，将 bean 类名解析为 class 引用。
+</span><span class=c1></span>    <span class=n>Class</span><span class=o>&lt;?&gt;</span> <span class=n>beanClass</span> <span class=o>=</span> <span class=n>resolveBeanClass</span><span class=o>(</span><span class=n>mbd</span><span class=o>,</span> <span class=n>beanName</span><span class=o>);</span>
+	
+    <span class=cm>/*
+</span><span class=cm>     * 检测类的访问权限。默认情况下，对于非 public 的类，是允许访问的。
+</span><span class=cm>     * 若禁止访问，这里会抛出异常
+</span><span class=cm>     */</span>
+    <span class=k>if</span> <span class=o>(</span><span class=n>beanClass</span> <span class=o>!=</span> <span class=kc>null</span> <span class=o>&amp;&amp;</span> <span class=o>!</span><span class=n>Modifier</span><span class=o>.</span><span class=na>isPublic</span><span class=o>(</span><span class=n>beanClass</span><span class=o>.</span><span class=na>getModifiers</span><span class=o>())</span> <span class=o>&amp;&amp;</span> <span class=o>!</span><span class=n>mbd</span><span class=o>.</span><span class=na>isNonPublicAccessAllowed</span><span class=o>())</span> <span class=o>{</span> <span class=c1>// 校验
+</span><span class=c1></span>        <span class=k>throw</span> <span class=k>new</span> <span class=n>BeanCreationException</span><span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>getResourceDescription</span><span class=o>(),</span> <span class=n>beanName</span><span class=o>,</span>
+                <span class=s>&#34;Bean class isn&#39;t public, and non-public access not allowed: &#34;</span> <span class=o>+</span> <span class=n>beanClass</span><span class=o>.</span><span class=na>getName</span><span class=o>());</span>
+    <span class=o>}</span>
+
+    <span class=c1>// &lt;1&gt; 如果存在 Supplier 回调，则使用给定的回调方法初始化策略
+</span><span class=c1></span>    <span class=n>Supplier</span><span class=o>&lt;?&gt;</span> <span class=n>instanceSupplier</span> <span class=o>=</span> <span class=n>mbd</span><span class=o>.</span><span class=na>getInstanceSupplier</span><span class=o>();</span>
+    <span class=k>if</span> <span class=o>(</span><span class=n>instanceSupplier</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+        <span class=k>return</span> <span class=n>obtainFromSupplier</span><span class=o>(</span><span class=n>instanceSupplier</span><span class=o>,</span> <span class=n>beanName</span><span class=o>);</span>
+    <span class=o>}</span>
+
+    <span class=c1>// &lt;2&gt; 使用 FactoryBean 的 factory-method 来创建bean 对象，支持静态工厂和实例工厂
+</span><span class=c1></span>    <span class=k>if</span> <span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>getFactoryMethodName</span><span class=o>()</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span>  <span class=o>{</span>
+        <span class=k>return</span> <span class=n>instantiateUsingFactoryMethod</span><span class=o>(</span><span class=n>beanName</span><span class=o>,</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>args</span><span class=o>);</span>
+    <span class=o>}</span>
+
+    <span class=c1>// &lt;3&gt; 快捷路径
+</span><span class=c1></span>    <span class=cm>/*
+</span><span class=cm>     * 当多次构建同一个 bean 时，可以使用此处的快捷路径，即无需再次推断应该使用哪种方式构造实例，
+</span><span class=cm>     * 以提高效率。比如在多次构建同一个 prototype 类型的 bean 时，就可以走此处的捷径。
+</span><span class=cm>     * 这里的 resolved 和 mbd.constructorArgumentsResolved 将会在 bean 第一次实例
+</span><span class=cm>     * 化的过程中被设置。
+</span><span class=cm>     */</span>
+    <span class=kt>boolean</span> <span class=n>resolved</span> <span class=o>=</span> <span class=kc>false</span><span class=o>;</span>
+    <span class=kt>boolean</span> <span class=n>autowireNecessary</span> <span class=o>=</span> <span class=kc>false</span><span class=o>;</span>
+    <span class=k>if</span> <span class=o>(</span><span class=n>args</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+        <span class=c1>// constructorArgumentLock 构造函数的常用锁
+</span><span class=c1></span>        <span class=kd>synchronized</span> <span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>constructorArgumentLock</span><span class=o>)</span> <span class=o>{</span>
+            <span class=c1>// 如果已缓存的解析的构造函数或者工厂方法不为空，则可以利用构造函数解析
+</span><span class=c1></span>            <span class=c1>// 因为需要根据参数确认到底使用哪个构造函数，该过程比较消耗性能，所有采用缓存机制
+</span><span class=c1></span>            <span class=k>if</span> <span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>resolvedConstructorOrFactoryMethod</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+                <span class=n>resolved</span> <span class=o>=</span> <span class=kc>true</span><span class=o>;</span>
+                <span class=n>autowireNecessary</span> <span class=o>=</span> <span class=n>mbd</span><span class=o>.</span><span class=na>constructorArgumentsResolved</span><span class=o>;</span>
+            <span class=o>}</span>
+        <span class=o>}</span>
+    <span class=o>}</span>
+    <span class=c1>// 已经解析好了，直接注入即可
+</span><span class=c1></span>    <span class=k>if</span> <span class=o>(</span><span class=n>resolved</span><span class=o>)</span> <span class=o>{</span>
+        <span class=c1>// &lt;3.1&gt; autowire 自动注入，调用构造函数自动注入
+</span><span class=c1></span>        <span class=k>if</span> <span class=o>(</span><span class=n>autowireNecessary</span><span class=o>)</span> <span class=o>{</span>
+            <span class=k>return</span> <span class=n>autowireConstructor</span><span class=o>(</span><span class=n>beanName</span><span class=o>,</span> <span class=n>mbd</span><span class=o>,</span> <span class=kc>null</span><span class=o>,</span> <span class=kc>null</span><span class=o>);</span>
+        <span class=o>}</span> <span class=k>else</span> <span class=o>{</span>
+            <span class=c1>// &lt;3.2&gt; 使用默认构造函数构造
+</span><span class=c1></span>            <span class=k>return</span> <span class=n>instantiateBean</span><span class=o>(</span><span class=n>beanName</span><span class=o>,</span> <span class=n>mbd</span><span class=o>);</span>
+        <span class=o>}</span>
+    <span class=o>}</span>
+
+    <span class=c1>// &lt;4&gt; 由后置处理器决定返回哪些构造方法
+</span><span class=c1></span>    <span class=n>Constructor</span><span class=o>&lt;?&gt;[]</span> <span class=n>ctors</span> <span class=o>=</span> <span class=n>determineConstructorsFromBeanPostProcessors</span><span class=o>(</span><span class=n>beanClass</span><span class=o>,</span> <span class=n>beanName</span><span class=o>);</span>
+    <span class=c1>// &lt;4.1&gt; 有参数情况时，创建 Bean 。先利用参数个数，类型等，确定最精确匹配的构造方法。
+</span><span class=c1></span>    <span class=cm>/*
+</span><span class=cm>     *	下面4个条件，只要有一个为 true，就会通过构造方法自动注入的方式构造 bean 实例
+</span><span class=cm>     * 
+</span><span class=cm>     *    条件1：ctors != null -&gt; 后置处理器返回构造方法数组是否为空
+</span><span class=cm>     *    
+</span><span class=cm>     *    条件2：mbd.getResolvedAutowireMode() == RootBeanDefinition.AUTOWIRE_CONSTRUCTOR 
+</span><span class=cm>     *              -&gt; bean 配置中的 autowire 属性是否为 constructor    
+</span><span class=cm>     *    条件3：mbd.hasConstructorArgumentValues() 
+</span><span class=cm>     *              -&gt; constructorArgumentValues 是否存在元素，即 bean 配置文件中
+</span><span class=cm>     *                 是否配置了 &lt;construct-arg/&gt;
+</span><span class=cm>     *    条件4：!ObjectUtils.isEmpty(args) 
+</span><span class=cm>     *              -&gt; args 数组是否存在元素，args 是由用户调用 
+</span><span class=cm>     *                 getBean(String name, Object... args) 传入的
+</span><span class=cm>     */</span>
+    <span class=k>if</span> <span class=o>(</span><span class=n>ctors</span> <span class=o>!=</span> <span class=kc>null</span> <span class=o>||</span> <span class=n>mbd</span><span class=o>.</span><span class=na>getResolvedAutowireMode</span><span class=o>()</span> <span class=o>==</span> <span class=n>AUTOWIRE_CONSTRUCTOR</span> <span class=o>||</span>
+            <span class=n>mbd</span><span class=o>.</span><span class=na>hasConstructorArgumentValues</span><span class=o>()</span> <span class=o>||</span> <span class=o>!</span><span class=n>ObjectUtils</span><span class=o>.</span><span class=na>isEmpty</span><span class=o>(</span><span class=n>args</span><span class=o>))</span>  <span class=o>{</span>
+        <span class=k>return</span> <span class=n>autowireConstructor</span><span class=o>(</span><span class=n>beanName</span><span class=o>,</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>ctors</span><span class=o>,</span> <span class=n>args</span><span class=o>);</span>
+    <span class=o>}</span>
+
+    <span class=c1>// &lt;4.1&gt; 选择构造方法，创建 Bean 。
+</span><span class=c1></span>    <span class=n>ctors</span> <span class=o>=</span> <span class=n>mbd</span><span class=o>.</span><span class=na>getPreferredConstructors</span><span class=o>();</span>
+    <span class=k>if</span> <span class=o>(</span><span class=n>ctors</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+        <span class=k>return</span> <span class=n>autowireConstructor</span><span class=o>(</span><span class=n>beanName</span><span class=o>,</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>ctors</span><span class=o>,</span> <span class=kc>null</span><span class=o>);</span> <span class=c1>// args = null
+</span><span class=c1></span>    <span class=o>}</span>
+
+    <span class=c1>// &lt;4.2&gt; 有参数时，又没获取到构造方法，则只能调用无参构造方法来创建实例了(兜底方法)
+</span><span class=c1></span>    <span class=k>return</span> <span class=n>instantiateBean</span><span class=o>(</span><span class=n>beanName</span><span class=o>,</span> <span class=n>mbd</span><span class=o>);</span>
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><p>整体的思路如下：</p><ol><li><p><code>&lt;1></code> 处，如果存在 Supplier 回调，则调用 <code>obtainFromSupplier</code> 方法，进行初始化。</p></li><li><p><code>&lt;2></code> 处，如果存在工厂方法，则使用工厂方法进行初始化。</p></li><li><p><code>&lt;3></code>处，如果<strong>缓存中存在</strong>，即已经解析过了，则直接使用已经解析了的。根据 <code>constructorArgumentsResolved</code> 参数来选择：</p><ul><li><code>&lt;3.1></code> 处，使用构造函数自动注入。调用<code>autowireConstructor(String beanName, RootBeanDefinition mbd, Constructor[] ctors, Object[] explicitArgs)</code> 方法</li><li><code>&lt;3.2></code> 处，使用默认构造函数。调用 <code>instantiateBean(final String beanName, final RootBeanDefinition mbd)</code> 方法。</li></ul></li><li><p><code>&lt;4></code> 处，如果<strong>缓存中没有</strong>，则通过组合条件决定使用哪种方式构建 bean 对象。</p><ul><li><p><code>&lt;4.1></code> 处，如果存在参数，则使用相应的带有参数的构造函数。</p></li><li><p><code>&lt;4.2></code> 处，否则，使用默认构造函数。</p></li></ul></li></ol><p>所以，这里有三种构造 bean 对象的方式，如下：</p><ol><li><p>Supplier 回调。</p></li><li><p>通过“工厂方法”的方式构造 bean 对象。</p></li><li><p>通过“构造方法自动注入”的方式构造 bean 对象。</p></li><li><p>通过“默认构造方法”的方式构造 bean 对象。</p></li></ol><p>下面将会分析第1种和第3种构造bean对象的方法。</p><h2 id=2-通过supplier-回调创建-bean-对象>2 通过Supplier 回调创建 bean 对象</h2><h3 id=21-supplier介绍>2.1 <code>Supplier</code>介绍</h3><p>Supplier 是什么呢？,Supplier是一个接口，位于<code>java.util.function</code>包下。代码如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=kd>public</span> <span class=kd>interface</span> <span class=nc>Supplier</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span> <span class=o>{</span>
+
+    <span class=n>T</span> <span class=nf>get</span><span class=o>();</span>
+    
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><p>Supplier 接口仅有一个功能性的 <code>#get()</code> 方法，该方法会返回一个 <code>&lt;T></code> 类型的对象，有点儿类似工厂方法。那这个接口有什么作用？用于指定创建 bean 的回调。如果我们设置了这样的回调，那么其他的构造器或者工厂方法都会没有用。</p><p>Spring 提供了相应的 setter 方法，用于设置Supplier 参数，代码如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>// AbstractBeanDefinition.java
+</span><span class=c1></span>
+<span class=cm>/**
+</span><span class=cm> * 创建 Bean 的 Supplier 对象
+</span><span class=cm> */</span>
+<span class=nd>@Nullable</span>
+<span class=kd>private</span> <span class=n>Supplier</span><span class=o>&lt;?&gt;</span> <span class=n>instanceSupplier</span><span class=o>;</span>
+
+<span class=kd>public</span> <span class=kt>void</span> <span class=nf>setInstanceSupplier</span><span class=o>(</span><span class=nd>@Nullable</span> <span class=n>Supplier</span><span class=o>&lt;?&gt;</span> <span class=n>instanceSupplier</span><span class=o>)</span> <span class=o>{</span>
+	<span class=k>this</span><span class=o>.</span><span class=na>instanceSupplier</span> <span class=o>=</span> <span class=n>instanceSupplier</span><span class=o>;</span>
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><p>在构造 <code>BeanDefinition</code> 对象的时候，设置了 <code>instanceSupplier</code> 该值，代码如下（以 <code>RootBeanDefinition</code> 为例）：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>// RootBeanDefinition.java
+</span><span class=c1></span>
+<span class=kd>public</span> <span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span> <span class=nf>RootBeanDefinition</span><span class=o>(</span><span class=nd>@Nullable</span> <span class=n>Class</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span> <span class=n>beanClass</span><span class=o>,</span> <span class=n>String</span> <span class=n>scope</span><span class=o>,</span> <span class=nd>@Nullable</span> <span class=n>Supplier</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span> <span class=n>instanceSupplier</span><span class=o>)</span> <span class=o>{</span>
+	<span class=kd>super</span><span class=o>();</span>
+	<span class=n>setBeanClass</span><span class=o>(</span><span class=n>beanClass</span><span class=o>);</span>
+	<span class=n>setScope</span><span class=o>(</span><span class=n>scope</span><span class=o>);</span>
+	<span class=c1>// 设置 instanceSupplier 属性
+</span><span class=c1></span>	<span class=n>setInstanceSupplier</span><span class=o>(</span><span class=n>instanceSupplier</span><span class=o>);</span>
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><h3 id=22-supplier-回调>2.2 Supplier 回调</h3><p>在<code>createBeanInstance</code>方法中，对应调用代码如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=n>Supplier</span><span class=o>&lt;?&gt;</span> <span class=n>instanceSupplier</span> <span class=o>=</span> <span class=n>mbd</span><span class=o>.</span><span class=na>getInstanceSupplier</span><span class=o>();</span>
+<span class=k>if</span> <span class=o>(</span><span class=n>instanceSupplier</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+    <span class=k>return</span> <span class=n>obtainFromSupplier</span><span class=o>(</span><span class=n>instanceSupplier</span><span class=o>,</span> <span class=n>beanName</span><span class=o>);</span>
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><p>先从 <code>BeanDefinition</code> 中获取 Supplier 对象。如果不为空，则调用 <code>obtainFromSupplier</code> 方法。代码如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>// AbstractAutowireCapableBeanFactory.java
+</span><span class=c1></span>
+<span class=cm>/**
+</span><span class=cm> * 当前线程，正在创建的 Bean 对象的名字
+</span><span class=cm> */</span>
+<span class=kd>private</span> <span class=kd>final</span> <span class=n>NamedThreadLocal</span><span class=o>&lt;</span><span class=n>String</span><span class=o>&gt;</span> <span class=n>currentlyCreatedBean</span> <span class=o>=</span> <span class=k>new</span> <span class=n>NamedThreadLocal</span><span class=o>&lt;&gt;(</span><span class=s>&#34;Currently created bean&#34;</span><span class=o>);</span>
+
+<span class=kd>protected</span> <span class=n>BeanWrapper</span> <span class=nf>obtainFromSupplier</span><span class=o>(</span><span class=n>Supplier</span><span class=o>&lt;?&gt;</span> <span class=n>instanceSupplier</span><span class=o>,</span> <span class=n>String</span> <span class=n>beanName</span><span class=o>)</span> <span class=o>{</span>
+    <span class=n>Object</span> <span class=n>instance</span><span class=o>;</span>
+    <span class=c1>// 获得原创建的 Bean 的对象名
+</span><span class=c1></span>    <span class=n>String</span> <span class=n>outerBean</span> <span class=o>=</span> <span class=k>this</span><span class=o>.</span><span class=na>currentlyCreatedBean</span><span class=o>.</span><span class=na>get</span><span class=o>();</span>
+    <span class=c1>// 设置新的 Bean 的对象名，到 currentlyCreatedBean 中
+</span><span class=c1></span>    <span class=k>this</span><span class=o>.</span><span class=na>currentlyCreatedBean</span><span class=o>.</span><span class=na>set</span><span class=o>(</span><span class=n>beanName</span><span class=o>);</span>
+    <span class=k>try</span> <span class=o>{</span>
+        <span class=c1>// &lt;1&gt; 调用 Supplier 的 get()，返回一个 Bean 对象
+</span><span class=c1></span>        <span class=n>instance</span> <span class=o>=</span> <span class=n>instanceSupplier</span><span class=o>.</span><span class=na>get</span><span class=o>();</span>
+    <span class=o>}</span> <span class=k>finally</span> <span class=o>{</span>
+        <span class=c1>// 设置原创建的 Bean 的对象名，到 currentlyCreatedBean 中
+</span><span class=c1></span>        <span class=k>if</span> <span class=o>(</span><span class=n>outerBean</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+            <span class=k>this</span><span class=o>.</span><span class=na>currentlyCreatedBean</span><span class=o>.</span><span class=na>set</span><span class=o>(</span><span class=n>outerBean</span><span class=o>);</span>
+        <span class=o>}</span> <span class=k>else</span> <span class=o>{</span>
+            <span class=k>this</span><span class=o>.</span><span class=na>currentlyCreatedBean</span><span class=o>.</span><span class=na>remove</span><span class=o>();</span>
+        <span class=o>}</span>
+    <span class=o>}</span>
+
+    <span class=c1>// 未创建 Bean 对象，则创建 NullBean 对象
+</span><span class=c1></span>    <span class=k>if</span> <span class=o>(</span><span class=n>instance</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+        <span class=n>instance</span> <span class=o>=</span> <span class=k>new</span> <span class=n>NullBean</span><span class=o>();</span>
+    <span class=o>}</span>
+    <span class=c1>// &lt;2&gt; 创建 BeanWrapper 对象
+</span><span class=c1></span>    <span class=n>BeanWrapper</span> <span class=n>bw</span> <span class=o>=</span> <span class=k>new</span> <span class=n>BeanWrapperImpl</span><span class=o>(</span><span class=n>instance</span><span class=o>);</span>
+    <span class=c1>// &lt;3&gt; 初始化 BeanWrapper 对象
+</span><span class=c1></span>    <span class=n>initBeanWrapper</span><span class=o>(</span><span class=n>bw</span><span class=o>);</span>
+    <span class=k>return</span> <span class=n>bw</span><span class=o>;</span>
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><p>流程如下：</p><ol><li><p><code>&lt;1></code> 处，调用 Supplier 的 <code>get()</code> 方法，获得一个 Bean 实例对象。</p></li><li><p><code>&lt;2></code> 处，根据该实例对象构造一个<code>BeanWrapper</code>对象 <code>bw</code> 。</p></li><li><p><code>&lt;3></code>处， 初始化该对象。</p></li></ol><h2 id=3-通过构造方法自动注入创建-bean-对象>3 通过构造方法自动注入创建 bean 对象</h2><p>这个初始化方法，我们可以简单理解为是<strong>带有参数的构造方法</strong>，来初始化 Bean 对象。代码逻辑较为复杂，需要大家耐心阅读。代码段如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>// AbstractAutowireCapableBeanFactory.java
+</span><span class=c1></span>
+<span class=kd>protected</span> <span class=n>BeanWrapper</span> <span class=nf>autowireConstructor</span><span class=o>(</span><span class=n>String</span> <span class=n>beanName</span><span class=o>,</span> <span class=n>RootBeanDefinition</span> <span class=n>mbd</span><span class=o>,</span> <span class=nd>@Nullable</span> <span class=n>Constructor</span><span class=o>&lt;?&gt;[]</span> <span class=n>ctors</span><span class=o>,</span> <span class=nd>@Nullable</span> <span class=n>Object</span><span class=o>[]</span> <span class=n>explicitArgs</span><span class=o>)</span> <span class=o>{</span>
+    
+    <span class=c1>// 创建 ConstructorResolver 对象，并调用其 autowireConstructor 方法
+</span><span class=c1></span>    <span class=k>return</span> <span class=k>new</span> <span class=n>ConstructorResolver</span><span class=o>(</span><span class=k>this</span><span class=o>).</span><span class=na>autowireConstructor</span><span class=o>(</span><span class=n>beanName</span><span class=o>,</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>ctors</span><span class=o>,</span> <span class=n>explicitArgs</span><span class=o>);</span>
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>  1
+</span><span class=lnt>  2
+</span><span class=lnt>  3
+</span><span class=lnt>  4
+</span><span class=lnt>  5
+</span><span class=lnt>  6
+</span><span class=lnt>  7
+</span><span class=lnt>  8
+</span><span class=lnt>  9
+</span><span class=lnt> 10
+</span><span class=lnt> 11
+</span><span class=lnt> 12
+</span><span class=lnt> 13
+</span><span class=lnt> 14
+</span><span class=lnt> 15
+</span><span class=lnt> 16
+</span><span class=lnt> 17
+</span><span class=lnt> 18
+</span><span class=lnt> 19
+</span><span class=lnt> 20
+</span><span class=lnt> 21
+</span><span class=lnt> 22
+</span><span class=lnt> 23
+</span><span class=lnt> 24
+</span><span class=lnt> 25
+</span><span class=lnt> 26
+</span><span class=lnt> 27
+</span><span class=lnt> 28
+</span><span class=lnt> 29
+</span><span class=lnt> 30
+</span><span class=lnt> 31
+</span><span class=lnt> 32
+</span><span class=lnt> 33
+</span><span class=lnt> 34
+</span><span class=lnt> 35
+</span><span class=lnt> 36
+</span><span class=lnt> 37
+</span><span class=lnt> 38
+</span><span class=lnt> 39
+</span><span class=lnt> 40
+</span><span class=lnt> 41
+</span><span class=lnt> 42
+</span><span class=lnt> 43
+</span><span class=lnt> 44
+</span><span class=lnt> 45
+</span><span class=lnt> 46
+</span><span class=lnt> 47
+</span><span class=lnt> 48
+</span><span class=lnt> 49
+</span><span class=lnt> 50
+</span><span class=lnt> 51
+</span><span class=lnt> 52
+</span><span class=lnt> 53
+</span><span class=lnt> 54
+</span><span class=lnt> 55
+</span><span class=lnt> 56
+</span><span class=lnt> 57
+</span><span class=lnt> 58
+</span><span class=lnt> 59
+</span><span class=lnt> 60
+</span><span class=lnt> 61
+</span><span class=lnt> 62
+</span><span class=lnt> 63
+</span><span class=lnt> 64
+</span><span class=lnt> 65
+</span><span class=lnt> 66
+</span><span class=lnt> 67
+</span><span class=lnt> 68
+</span><span class=lnt> 69
+</span><span class=lnt> 70
+</span><span class=lnt> 71
+</span><span class=lnt> 72
+</span><span class=lnt> 73
+</span><span class=lnt> 74
+</span><span class=lnt> 75
+</span><span class=lnt> 76
+</span><span class=lnt> 77
+</span><span class=lnt> 78
+</span><span class=lnt> 79
+</span><span class=lnt> 80
+</span><span class=lnt> 81
+</span><span class=lnt> 82
+</span><span class=lnt> 83
+</span><span class=lnt> 84
+</span><span class=lnt> 85
+</span><span class=lnt> 86
+</span><span class=lnt> 87
+</span><span class=lnt> 88
+</span><span class=lnt> 89
+</span><span class=lnt> 90
+</span><span class=lnt> 91
+</span><span class=lnt> 92
+</span><span class=lnt> 93
+</span><span class=lnt> 94
+</span><span class=lnt> 95
+</span><span class=lnt> 96
+</span><span class=lnt> 97
+</span><span class=lnt> 98
+</span><span class=lnt> 99
+</span><span class=lnt>100
+</span><span class=lnt>101
+</span><span class=lnt>102
+</span><span class=lnt>103
+</span><span class=lnt>104
+</span><span class=lnt>105
+</span><span class=lnt>106
+</span><span class=lnt>107
+</span><span class=lnt>108
+</span><span class=lnt>109
+</span><span class=lnt>110
+</span><span class=lnt>111
+</span><span class=lnt>112
+</span><span class=lnt>113
+</span><span class=lnt>114
+</span><span class=lnt>115
+</span><span class=lnt>116
+</span><span class=lnt>117
+</span><span class=lnt>118
+</span><span class=lnt>119
+</span><span class=lnt>120
+</span><span class=lnt>121
+</span><span class=lnt>122
+</span><span class=lnt>123
+</span><span class=lnt>124
+</span><span class=lnt>125
+</span><span class=lnt>126
+</span><span class=lnt>127
+</span><span class=lnt>128
+</span><span class=lnt>129
+</span><span class=lnt>130
+</span><span class=lnt>131
+</span><span class=lnt>132
+</span><span class=lnt>133
+</span><span class=lnt>134
+</span><span class=lnt>135
+</span><span class=lnt>136
+</span><span class=lnt>137
+</span><span class=lnt>138
+</span><span class=lnt>139
+</span><span class=lnt>140
+</span><span class=lnt>141
+</span><span class=lnt>142
+</span><span class=lnt>143
+</span><span class=lnt>144
+</span><span class=lnt>145
+</span><span class=lnt>146
+</span><span class=lnt>147
+</span><span class=lnt>148
+</span><span class=lnt>149
+</span><span class=lnt>150
+</span><span class=lnt>151
+</span><span class=lnt>152
+</span><span class=lnt>153
+</span><span class=lnt>154
+</span><span class=lnt>155
+</span><span class=lnt>156
+</span><span class=lnt>157
+</span><span class=lnt>158
+</span><span class=lnt>159
+</span><span class=lnt>160
+</span><span class=lnt>161
+</span><span class=lnt>162
+</span><span class=lnt>163
+</span><span class=lnt>164
+</span><span class=lnt>165
+</span><span class=lnt>166
+</span><span class=lnt>167
+</span><span class=lnt>168
+</span><span class=lnt>169
+</span><span class=lnt>170
+</span><span class=lnt>171
+</span><span class=lnt>172
+</span><span class=lnt>173
+</span><span class=lnt>174
+</span><span class=lnt>175
+</span><span class=lnt>176
+</span><span class=lnt>177
+</span><span class=lnt>178
+</span><span class=lnt>179
+</span><span class=lnt>180
+</span><span class=lnt>181
+</span><span class=lnt>182
+</span><span class=lnt>183
+</span><span class=lnt>184
+</span><span class=lnt>185
+</span><span class=lnt>186
+</span><span class=lnt>187
+</span><span class=lnt>188
+</span><span class=lnt>189
+</span><span class=lnt>190
+</span><span class=lnt>191
+</span><span class=lnt>192
+</span><span class=lnt>193
+</span><span class=lnt>194
+</span><span class=lnt>195
+</span><span class=lnt>196
+</span><span class=lnt>197
+</span><span class=lnt>198
+</span><span class=lnt>199
+</span><span class=lnt>200
+</span><span class=lnt>201
+</span><span class=lnt>202
+</span><span class=lnt>203
+</span><span class=lnt>204
+</span><span class=lnt>205
+</span><span class=lnt>206
+</span><span class=lnt>207
+</span><span class=lnt>208
+</span><span class=lnt>209
+</span><span class=lnt>210
+</span><span class=lnt>211
+</span><span class=lnt>212
+</span><span class=lnt>213
+</span><span class=lnt>214
+</span><span class=lnt>215
+</span><span class=lnt>216
+</span><span class=lnt>217
+</span><span class=lnt>218
+</span><span class=lnt>219
+</span><span class=lnt>220
+</span><span class=lnt>221
+</span><span class=lnt>222
+</span><span class=lnt>223
+</span><span class=lnt>224
+</span><span class=lnt>225
+</span><span class=lnt>226
+</span><span class=lnt>227
+</span><span class=lnt>228
+</span><span class=lnt>229
+</span><span class=lnt>230
+</span><span class=lnt>231
+</span><span class=lnt>232
+</span><span class=lnt>233
+</span><span class=lnt>234
+</span><span class=lnt>235
+</span><span class=lnt>236
+</span><span class=lnt>237
+</span><span class=lnt>238
+</span><span class=lnt>239
+</span><span class=lnt>240
+</span><span class=lnt>241
+</span><span class=lnt>242
+</span><span class=lnt>243
+</span><span class=lnt>244
+</span><span class=lnt>245
+</span><span class=lnt>246
+</span><span class=lnt>247
+</span><span class=lnt>248
+</span><span class=lnt>249
+</span><span class=lnt>250
+</span><span class=lnt>251
+</span><span class=lnt>252
+</span><span class=lnt>253
+</span><span class=lnt>254
+</span><span class=lnt>255
+</span><span class=lnt>256
+</span><span class=lnt>257
+</span><span class=lnt>258
+</span><span class=lnt>259
+</span><span class=lnt>260
+</span><span class=lnt>261
+</span><span class=lnt>262
+</span><span class=lnt>263
+</span><span class=lnt>264
+</span><span class=lnt>265
+</span><span class=lnt>266
+</span><span class=lnt>267
+</span><span class=lnt>268
+</span><span class=lnt>269
+</span><span class=lnt>270
+</span><span class=lnt>271
+</span><span class=lnt>272
+</span><span class=lnt>273
+</span><span class=lnt>274
+</span><span class=lnt>275
+</span><span class=lnt>276
+</span><span class=lnt>277
+</span><span class=lnt>278
+</span><span class=lnt>279
+</span><span class=lnt>280
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>// ConstructorResolver.java
+</span><span class=c1></span>
+<span class=kd>public</span> <span class=n>BeanWrapper</span> <span class=nf>autowireConstructor</span><span class=o>(</span><span class=n>String</span> <span class=n>beanName</span><span class=o>,</span> <span class=n>RootBeanDefinition</span> <span class=n>mbd</span><span class=o>,</span>
+        <span class=nd>@Nullable</span> <span class=n>Constructor</span><span class=o>&lt;?&gt;[]</span> <span class=n>chosenCtors</span><span class=o>,</span> <span class=nd>@Nullable</span> <span class=n>Object</span><span class=o>[]</span> <span class=n>explicitArgs</span><span class=o>)</span> <span class=o>{</span>
+    
+    <span class=c1>// 封装 BeanWrapperImpl 对象，并完成初始化
+</span><span class=c1></span>    <span class=n>BeanWrapperImpl</span> <span class=n>bw</span> <span class=o>=</span> <span class=k>new</span> <span class=n>BeanWrapperImpl</span><span class=o>();</span>
+    <span class=k>this</span><span class=o>.</span><span class=na>beanFactory</span><span class=o>.</span><span class=na>initBeanWrapper</span><span class=o>(</span><span class=n>bw</span><span class=o>);</span>
+
+    <span class=c1>// 获得 constructorToUse、argsHolderToUse、argsToUse
+</span><span class=c1></span>    <span class=n>Constructor</span><span class=o>&lt;?&gt;</span> <span class=n>constructorToUse</span> <span class=o>=</span> <span class=kc>null</span><span class=o>;</span> <span class=c1>// 构造函数
+</span><span class=c1></span>    <span class=n>ArgumentsHolder</span> <span class=n>argsHolderToUse</span> <span class=o>=</span> <span class=kc>null</span><span class=o>;</span> <span class=c1>// 构造参数
+</span><span class=c1></span>    <span class=n>Object</span><span class=o>[]</span> <span class=n>argsToUse</span> <span class=o>=</span> <span class=kc>null</span><span class=o>;</span> <span class=c1>// 构造参数
+</span><span class=c1></span>
+    <span class=c1>// 确定构造参数(argsToUse)
+</span><span class=c1></span>    <span class=c1>// 如果 getBean() 已经传递，则直接使用
+</span><span class=c1></span>    <span class=k>if</span> <span class=o>(</span><span class=n>explicitArgs</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+        <span class=n>argsToUse</span> <span class=o>=</span> <span class=n>explicitArgs</span><span class=o>;</span>
+    <span class=o>}</span> <span class=k>else</span> <span class=o>{</span>
+        <span class=c1>// 尝试从缓存中获取
+</span><span class=c1></span>        <span class=n>Object</span><span class=o>[]</span> <span class=n>argsToResolve</span> <span class=o>=</span> <span class=kc>null</span><span class=o>;</span>
+        <span class=kd>synchronized</span> <span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>constructorArgumentLock</span><span class=o>)</span> <span class=o>{</span>
+            <span class=c1>// 获取已解析的构造方法
+</span><span class=c1></span>            <span class=n>constructorToUse</span> <span class=o>=</span> <span class=o>(</span><span class=n>Constructor</span><span class=o>&lt;?&gt;)</span> <span class=n>mbd</span><span class=o>.</span><span class=na>resolvedConstructorOrFactoryMethod</span><span class=o>;</span>
+            <span class=k>if</span> <span class=o>(</span><span class=n>constructorToUse</span> <span class=o>!=</span> <span class=kc>null</span> <span class=o>&amp;&amp;</span> <span class=n>mbd</span><span class=o>.</span><span class=na>constructorArgumentsResolved</span><span class=o>)</span> <span class=o>{</span>
+                <span class=c1>// 获取已解析的构造方法参数列表
+</span><span class=c1></span>                <span class=n>argsToUse</span> <span class=o>=</span> <span class=n>mbd</span><span class=o>.</span><span class=na>resolvedConstructorArguments</span><span class=o>;</span>
+                <span class=k>if</span> <span class=o>(</span><span class=n>argsToUse</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+                    <span class=c1>// 若 argsToUse 为空，则获取未解析的构造方法参数列表
+</span><span class=c1></span>                    <span class=n>argsToResolve</span> <span class=o>=</span> <span class=n>mbd</span><span class=o>.</span><span class=na>preparedConstructorArguments</span><span class=o>;</span>
+                <span class=o>}</span>
+            <span class=o>}</span>	
+        <span class=o>}</span>
+        <span class=c1>// 缓存中存在,则解析存储在 BeanDefinition 中的参数
+</span><span class=c1></span>        <span class=c1>// 如给定方法的构造函数 A(int ,int )，则通过此方法后就会把配置文件中的(&#34;1&#34;,&#34;1&#34;)转换为 (1,1)
+</span><span class=c1></span>        <span class=c1>// 缓存中的值可能是原始值也有可能是最终值
+</span><span class=c1></span>        <span class=k>if</span> <span class=o>(</span><span class=n>argsToResolve</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+            <span class=n>argsToUse</span> <span class=o>=</span> <span class=n>resolvePreparedArguments</span><span class=o>(</span><span class=n>beanName</span><span class=o>,</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>bw</span><span class=o>,</span> <span class=n>constructorToUse</span><span class=o>,</span> <span class=n>argsToResolve</span><span class=o>,</span> <span class=kc>true</span><span class=o>);</span>
+        <span class=o>}</span>
+    <span class=o>}</span>
+
+    <span class=c1>// 没有缓存，则尝试从配置文件中获取参数
+</span><span class=c1></span>    <span class=k>if</span> <span class=o>(</span><span class=n>constructorToUse</span> <span class=o>==</span> <span class=kc>null</span> <span class=o>||</span> <span class=n>argsToUse</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+        <span class=c1>// 如果 chosenCtors 未传入，则获取构造方法们
+</span><span class=c1></span>        <span class=n>Constructor</span><span class=o>&lt;?&gt;[]</span> <span class=n>candidates</span> <span class=o>=</span> <span class=n>chosenCtors</span><span class=o>;</span>
+        <span class=k>if</span> <span class=o>(</span><span class=n>candidates</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+            <span class=n>Class</span><span class=o>&lt;?&gt;</span> <span class=n>beanClass</span> <span class=o>=</span> <span class=n>mbd</span><span class=o>.</span><span class=na>getBeanClass</span><span class=o>();</span>
+            <span class=k>try</span> <span class=o>{</span>
+                <span class=n>candidates</span> <span class=o>=</span> <span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>isNonPublicAccessAllowed</span><span class=o>()</span> <span class=o>?</span>
+                        <span class=n>beanClass</span><span class=o>.</span><span class=na>getDeclaredConstructors</span><span class=o>()</span> <span class=o>:</span> <span class=n>beanClass</span><span class=o>.</span><span class=na>getConstructors</span><span class=o>());</span>
+            <span class=o>}</span> <span class=k>catch</span> <span class=o>(</span><span class=n>Throwable</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+                <span class=k>throw</span> <span class=k>new</span> <span class=n>BeanCreationException</span><span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>getResourceDescription</span><span class=o>(),</span> <span class=n>beanName</span><span class=o>,</span>
+                        <span class=s>&#34;Resolution of declared constructors on bean Class [&#34;</span> <span class=o>+</span> <span class=n>beanClass</span><span class=o>.</span><span class=na>getName</span><span class=o>()</span> <span class=o>+</span>
+                        <span class=s>&#34;] from ClassLoader [&#34;</span> <span class=o>+</span> <span class=n>beanClass</span><span class=o>.</span><span class=na>getClassLoader</span><span class=o>()</span> <span class=o>+</span> <span class=s>&#34;] failed&#34;</span><span class=o>,</span> <span class=n>ex</span><span class=o>);</span>
+            <span class=o>}</span>
+        <span class=o>}</span>
+
+        <span class=c1>// 创建 Bean
+</span><span class=c1></span>        <span class=k>if</span> <span class=o>(</span><span class=n>candidates</span><span class=o>.</span><span class=na>length</span> <span class=o>==</span> <span class=n>1</span> <span class=o>&amp;&amp;</span> <span class=n>explicitArgs</span> <span class=o>==</span> <span class=kc>null</span> <span class=o>&amp;&amp;</span> <span class=o>!</span><span class=n>mbd</span><span class=o>.</span><span class=na>hasConstructorArgumentValues</span><span class=o>())</span> <span class=o>{</span>
+            <span class=n>Constructor</span><span class=o>&lt;?&gt;</span> <span class=n>uniqueCandidate</span> <span class=o>=</span> <span class=n>candidates</span><span class=o>[</span><span class=n>0</span><span class=o>];</span>
+            <span class=k>if</span> <span class=o>(</span><span class=n>uniqueCandidate</span><span class=o>.</span><span class=na>getParameterCount</span><span class=o>()</span> <span class=o>==</span> <span class=n>0</span><span class=o>)</span> <span class=o>{</span>
+                <span class=kd>synchronized</span> <span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>constructorArgumentLock</span><span class=o>)</span> <span class=o>{</span>
+                    <span class=n>mbd</span><span class=o>.</span><span class=na>resolvedConstructorOrFactoryMethod</span> <span class=o>=</span> <span class=n>uniqueCandidate</span><span class=o>;</span>
+                    <span class=n>mbd</span><span class=o>.</span><span class=na>constructorArgumentsResolved</span> <span class=o>=</span> <span class=kc>true</span><span class=o>;</span>
+                    <span class=n>mbd</span><span class=o>.</span><span class=na>resolvedConstructorArguments</span> <span class=o>=</span> <span class=n>EMPTY_ARGS</span><span class=o>;</span>
+                <span class=o>}</span>
+                <span class=n>bw</span><span class=o>.</span><span class=na>setBeanInstance</span><span class=o>(</span><span class=n>instantiate</span><span class=o>(</span><span class=n>beanName</span><span class=o>,</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>uniqueCandidate</span><span class=o>,</span> <span class=n>EMPTY_ARGS</span><span class=o>));</span>
+                <span class=k>return</span> <span class=n>bw</span><span class=o>;</span>
+            <span class=o>}</span>
+        <span class=o>}</span>
+
+        <span class=c1>// 是否需要解析构造器
+</span><span class=c1></span>        <span class=kt>boolean</span> <span class=n>autowiring</span> <span class=o>=</span> <span class=o>(</span><span class=n>chosenCtors</span> <span class=o>!=</span> <span class=kc>null</span> <span class=o>||</span>
+                <span class=n>mbd</span><span class=o>.</span><span class=na>getResolvedAutowireMode</span><span class=o>()</span> <span class=o>==</span> <span class=n>AutowireCapableBeanFactory</span><span class=o>.</span><span class=na>AUTOWIRE_CONSTRUCTOR</span><span class=o>);</span>
+        <span class=c1>// 用于承载解析后的构造函数参数的值
+</span><span class=c1></span>        <span class=n>ConstructorArgumentValues</span> <span class=n>resolvedValues</span> <span class=o>=</span> <span class=kc>null</span><span class=o>;</span>
+        <span class=kt>int</span> <span class=n>minNrOfArgs</span><span class=o>;</span>
+        <span class=k>if</span> <span class=o>(</span><span class=n>explicitArgs</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+            <span class=n>minNrOfArgs</span> <span class=o>=</span> <span class=n>explicitArgs</span><span class=o>.</span><span class=na>length</span><span class=o>;</span>
+        <span class=o>}</span> <span class=k>else</span> <span class=o>{</span>
+            <span class=c1>// 从 BeanDefinition 中获取构造参数，也就是从配置文件中提取构造参数
+</span><span class=c1></span>            <span class=n>ConstructorArgumentValues</span> <span class=n>cargs</span> <span class=o>=</span> <span class=n>mbd</span><span class=o>.</span><span class=na>getConstructorArgumentValues</span><span class=o>();</span>
+            <span class=n>resolvedValues</span> <span class=o>=</span> <span class=k>new</span> <span class=n>ConstructorArgumentValues</span><span class=o>();</span>
+            <span class=cm>/*
+</span><span class=cm>             * 确定构造方法参数数量，比如下面的配置：
+</span><span class=cm>             *     &lt;bean id=&#34;person&#34; class=&#34;com.coolsen.demo.autowire.Person&#34;&gt;
+</span><span class=cm>             *         &lt;constructor-arg index=&#34;0&#34; value=&#34;xiaoming&#34;/&gt;
+</span><span class=cm>             *         &lt;constructor-arg index=&#34;1&#34; value=&#34;1&#34;/&gt;
+</span><span class=cm>             *         &lt;constructor-arg index=&#34;2&#34; value=&#34;man&#34;/&gt;
+</span><span class=cm>             *     &lt;/bean&gt;
+</span><span class=cm>             *
+</span><span class=cm>             * 此时 minNrOfArgs = maxIndex + 1 = 2 + 1 = 3，除了计算 minNrOfArgs，
+</span><span class=cm>             * 下面的方法还会将 cargs 中的参数数据转存到 resolvedValues 中
+</span><span class=cm>             */</span>
+            <span class=n>minNrOfArgs</span> <span class=o>=</span> <span class=n>resolveConstructorArguments</span><span class=o>(</span><span class=n>beanName</span><span class=o>,</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>bw</span><span class=o>,</span> <span class=n>cargs</span><span class=o>,</span> <span class=n>resolvedValues</span><span class=o>);</span>
+        <span class=o>}</span>
+
+        <span class=c1>// 对构造函数进行排序处理
+</span><span class=c1></span>        <span class=c1>// public 构造函数优先参数数量降序，非public 构造函数参数数量降序
+</span><span class=c1></span>        <span class=n>AutowireUtils</span><span class=o>.</span><span class=na>sortConstructors</span><span class=o>(</span><span class=n>candidates</span><span class=o>);</span>
+
+        <span class=c1>// 最小参数类型权重
+</span><span class=c1></span>        <span class=kt>int</span> <span class=n>minTypeDiffWeight</span> <span class=o>=</span> <span class=n>Integer</span><span class=o>.</span><span class=na>MAX_VALUE</span><span class=o>;</span>
+        <span class=n>Set</span><span class=o>&lt;</span><span class=n>Constructor</span><span class=o>&lt;?&gt;&gt;</span> <span class=n>ambiguousConstructors</span> <span class=o>=</span> <span class=kc>null</span><span class=o>;</span>
+        <span class=n>LinkedList</span><span class=o>&lt;</span><span class=n>UnsatisfiedDependencyException</span><span class=o>&gt;</span> <span class=n>causes</span> <span class=o>=</span> <span class=kc>null</span><span class=o>;</span>
+
+        <span class=c1>// 迭代所有构造函数
+</span><span class=c1></span>        <span class=k>for</span> <span class=o>(</span><span class=n>Constructor</span><span class=o>&lt;?&gt;</span> <span class=n>candidate</span> <span class=o>:</span> <span class=n>candidates</span><span class=o>)</span> <span class=o>{</span>
+            <span class=c1>// 获取该构造函数的参数类型
+</span><span class=c1></span>            <span class=n>Class</span><span class=o>&lt;?&gt;[]</span> <span class=n>paramTypes</span> <span class=o>=</span> <span class=n>candidate</span><span class=o>.</span><span class=na>getParameterTypes</span><span class=o>();</span>
+
+            <span class=c1>// 如果已经找到选用的构造函数或者需要的参数个数小于当前的构造函数参数个数，则终止。
+</span><span class=c1></span>            <span class=cm>/*
+</span><span class=cm>             * 下面的 if 分支的用途是：若匹配到到合适的构造方法了，提前结束 for 循环
+</span><span class=cm>             * constructorToUse != null 这个条件比较好理解，下面分析一下条件 argsToUse.length &gt; paramTypes.length：
+</span><span class=cm>             * 前面说到 AutowireUtils.sortConstructors(candidates) 用于对构造方法进行
+</span><span class=cm>             * 排序，排序规则如下：
+</span><span class=cm>             *   1. 具有 public 访问权限的构造方法排在非 public 构造方法前
+</span><span class=cm>             *   2. 参数数量多的构造方法排在前面
+</span><span class=cm>             *
+</span><span class=cm>             * 假设现在有一组构造方法按照上面的排序规则进行排序，排序结果如下（省略参数名称）：
+</span><span class=cm>             *
+</span><span class=cm>             *   1. public Hello(Object, Object, Object)
+</span><span class=cm>             *   2. public Hello(Object, Object)
+</span><span class=cm>             *   3. public Hello(Object)
+</span><span class=cm>             *   4. protected Hello(Integer, Object, Object, Object)
+</span><span class=cm>             *   5. protected Hello(Integer, Object, Object)
+</span><span class=cm>             *   6. protected Hello(Integer, Object)
+</span><span class=cm>             *
+</span><span class=cm>             * argsToUse = [num1, obj2]，可以匹配上的构造方法2和构造方法6。由于构造方法2有
+</span><span class=cm>             * 更高的访问权限，所以没理由不选他（尽管后者在参数类型上更加匹配）。由于构造方法3
+</span><span class=cm>             * 参数数量 &lt; argsToUse.length，参数数量上不匹配，也不应该选。所以 
+</span><span class=cm>             * argsToUse.length &gt; paramTypes.length 这个条件用途是：在条件 
+</span><span class=cm>             * constructorToUse != null 成立的情况下，通过判断参数数量与参数值数量
+</span><span class=cm>             * （argsToUse.length）是否一致，来决定是否提前终止构造方法匹配逻辑。
+</span><span class=cm>             */</span>
+            
+            <span class=k>if</span> <span class=o>(</span><span class=n>constructorToUse</span> <span class=o>!=</span> <span class=kc>null</span> <span class=o>&amp;&amp;</span> <span class=n>argsToUse</span><span class=o>.</span><span class=na>length</span> <span class=o>&gt;</span> <span class=n>paramTypes</span><span class=o>.</span><span class=na>length</span><span class=o>)</span> <span class=o>{</span>
+                <span class=k>break</span><span class=o>;</span>
+            <span class=o>}</span>
+            
+            <span class=cm>/*
+</span><span class=cm>             * 构造方法参数数量低于配置的参数数量，则忽略当前构造方法，并重试。比如 
+</span><span class=cm>             * argsToUse = [obj1, obj2, obj3, obj4]，上面的构造方法列表中，
+</span><span class=cm>             * 构造方法1、2和3显然不是合适选择，忽略之。
+</span><span class=cm>             */</span>
+            <span class=k>if</span> <span class=o>(</span><span class=n>paramTypes</span><span class=o>.</span><span class=na>length</span> <span class=o>&lt;</span> <span class=n>minNrOfArgs</span><span class=o>)</span> <span class=o>{</span>
+                <span class=k>continue</span><span class=o>;</span>
+            <span class=o>}</span>
+
+            <span class=c1>// 参数持有者 ArgumentsHolder 对象	
+</span><span class=c1></span>            <span class=n>ArgumentsHolder</span> <span class=n>argsHolder</span><span class=o>;</span>
+            <span class=k>if</span> <span class=o>(</span><span class=n>resolvedValues</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+                <span class=k>try</span> <span class=o>{</span>
+                    <span class=c1>// 判断否则方法是否有 ConstructorProperties 注解，若有，则取注解中的值
+</span><span class=c1></span>                    <span class=n>String</span><span class=o>[]</span> <span class=n>paramNames</span> <span class=o>=</span> <span class=n>ConstructorPropertiesChecker</span><span class=o>.</span><span class=na>evaluate</span><span class=o>(</span><span class=n>candidate</span><span class=o>,</span> <span class=n>paramTypes</span><span class=o>.</span><span class=na>length</span><span class=o>);</span>
+                    <span class=k>if</span> <span class=o>(</span><span class=n>paramNames</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+                        <span class=c1>// 获取构造函数、方法参数的探测器
+</span><span class=c1></span>                        <span class=n>ParameterNameDiscoverer</span> <span class=n>pnd</span> <span class=o>=</span> <span class=k>this</span><span class=o>.</span><span class=na>beanFactory</span><span class=o>.</span><span class=na>getParameterNameDiscoverer</span><span class=o>();</span>
+                        <span class=k>if</span> <span class=o>(</span><span class=n>pnd</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+                            <span class=c1>// 通过探测器获取构造函数的参数名称
+</span><span class=c1></span>                            <span class=n>paramNames</span> <span class=o>=</span> <span class=n>pnd</span><span class=o>.</span><span class=na>getParameterNames</span><span class=o>(</span><span class=n>candidate</span><span class=o>);</span>
+                        <span class=o>}</span>
+                    <span class=o>}</span>
+                    
+                     <span class=cm>/* 
+</span><span class=cm>                     * 创建参数值列表，返回 argsHolder 会包含进行类型转换后的参数值，比如下
+</span><span class=cm>                     * 面的配置:
+</span><span class=cm>                     *
+</span><span class=cm>                     *  &lt;bean id=&#34;person&#34; class=&#34;com.coolsen.demo.autowire.Person&#34;&gt;
+</span><span class=cm>                     *         &lt;constructor-arg name=&#34;name&#34; value=&#34;xiaoming&#34;/&gt;
+</span><span class=cm>                     *         &lt;constructor-arg name=&#34;age&#34; value=&#34;1&#34;/&gt;
+</span><span class=cm>                     *         &lt;constructor-arg name=&#34;sex&#34; value=&#34;man&#34;/&gt;
+</span><span class=cm>                     *  &lt;/bean&gt;
+</span><span class=cm>                     *
+</span><span class=cm>                     * Person 的成员变量 age 是 Integer 类型的，但由于在 Spring 配置中
+</span><span class=cm>                     * 只能配成 String 类型，所以这里要进行类型转换。
+</span><span class=cm>                     */</span>
+                    <span class=n>argsHolder</span> <span class=o>=</span> <span class=n>createArgumentArray</span><span class=o>(</span><span class=n>beanName</span><span class=o>,</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>resolvedValues</span><span class=o>,</span> <span class=n>bw</span><span class=o>,</span> <span class=n>paramTypes</span><span class=o>,</span> <span class=n>paramNames</span><span class=o>,</span>
+                            <span class=n>getUserDeclaredConstructor</span><span class=o>(</span><span class=n>candidate</span><span class=o>),</span> <span class=n>autowiring</span><span class=o>,</span> <span class=n>candidates</span><span class=o>.</span><span class=na>length</span> <span class=o>==</span> <span class=n>1</span><span class=o>);</span>
+                <span class=o>}</span> <span class=k>catch</span> <span class=o>(</span><span class=n>UnsatisfiedDependencyException</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+                    <span class=k>if</span> <span class=o>(</span><span class=n>logger</span><span class=o>.</span><span class=na>isTraceEnabled</span><span class=o>())</span> <span class=o>{</span>
+                        <span class=n>logger</span><span class=o>.</span><span class=na>trace</span><span class=o>(</span><span class=s>&#34;Ignoring constructor [&#34;</span> <span class=o>+</span> <span class=n>candidate</span> <span class=o>+</span> <span class=s>&#34;] of bean &#39;&#34;</span> <span class=o>+</span> <span class=n>beanName</span> <span class=o>+</span> <span class=s>&#34;&#39;: &#34;</span> <span class=o>+</span> <span class=n>ex</span><span class=o>);</span>
+                    <span class=o>}</span>
+                    <span class=c1>// Swallow and try next constructor.
+</span><span class=c1></span>                    <span class=k>if</span> <span class=o>(</span><span class=n>causes</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+                        <span class=n>causes</span> <span class=o>=</span> <span class=k>new</span> <span class=n>LinkedList</span><span class=o>&lt;&gt;();</span>
+                    <span class=o>}</span>
+                    <span class=n>causes</span><span class=o>.</span><span class=na>add</span><span class=o>(</span><span class=n>ex</span><span class=o>);</span>
+                    <span class=k>continue</span><span class=o>;</span> <span class=c1>// continue ，继续执行
+</span><span class=c1></span>                <span class=o>}</span>
+            <span class=o>}</span> <span class=k>else</span> <span class=o>{</span>
+                <span class=k>if</span> <span class=o>(</span><span class=n>paramTypes</span><span class=o>.</span><span class=na>length</span> <span class=o>!=</span> <span class=n>explicitArgs</span><span class=o>.</span><span class=na>length</span><span class=o>)</span> <span class=o>{</span>
+                    <span class=k>continue</span><span class=o>;</span>
+                <span class=o>}</span>
+                <span class=n>argsHolder</span> <span class=o>=</span> <span class=k>new</span> <span class=n>ArgumentsHolder</span><span class=o>(</span><span class=n>explicitArgs</span><span class=o>);</span>
+            <span class=o>}</span>
+
+             <span class=cm>/*
+</span><span class=cm>             * 计算参数值（argsHolder.arguments）每个参数类型与构造方法参数列表
+</span><span class=cm>             * （paramTypes）中参数的类型差异量，差异量越大表明参数类型差异越大。参数类型差异
+</span><span class=cm>             * 越大，表明当前构造方法并不是一个最合适的候选项。引入差异量（typeDiffWeight）
+</span><span class=cm>             * 变量目的：是将候选构造方法的参数列表类型与参数值列表类型的差异进行量化，通过量化
+</span><span class=cm>             * 后的数值筛选出最合适的构造方法。
+</span><span class=cm>             * 
+</span><span class=cm>             * 讲完差异量，再来说说 mbd.isLenientConstructorResolution() 条件。
+</span><span class=cm>             * 官方的解释是：返回构造方法的解析模式，有宽松模式（lenient mode）和严格模式
+</span><span class=cm>             * （strict mode）两种类型可选。
+</span><span class=cm>             * 严格模式：解析构造函数时，必须所有的都需要匹配，否则抛出异常
+</span><span class=cm>             * 宽松模式：使用具有&#34;最接近的模式&#34;进行匹配
+</span><span class=cm>             * typeDiffWeight：类型差异权重
+</span><span class=cm>             */</span>
+            <span class=kt>int</span> <span class=n>typeDiffWeight</span> <span class=o>=</span> <span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>isLenientConstructorResolution</span><span class=o>()</span> <span class=o>?</span>
+                    <span class=n>argsHolder</span><span class=o>.</span><span class=na>getTypeDifferenceWeight</span><span class=o>(</span><span class=n>paramTypes</span><span class=o>)</span> <span class=o>:</span> <span class=n>argsHolder</span><span class=o>.</span><span class=na>getAssignabilityWeight</span><span class=o>(</span><span class=n>paramTypes</span><span class=o>));</span>
+            <span class=c1>// 如果它代表着当前最接近的匹配，则选择其作为构造函数
+</span><span class=c1></span>            <span class=k>if</span> <span class=o>(</span><span class=n>typeDiffWeight</span> <span class=o>&lt;</span> <span class=n>minTypeDiffWeight</span><span class=o>)</span> <span class=o>{</span>
+                <span class=n>constructorToUse</span> <span class=o>=</span> <span class=n>candidate</span><span class=o>;</span>
+                <span class=n>argsHolderToUse</span> <span class=o>=</span> <span class=n>argsHolder</span><span class=o>;</span>
+                <span class=n>argsToUse</span> <span class=o>=</span> <span class=n>argsHolder</span><span class=o>.</span><span class=na>arguments</span><span class=o>;</span>
+                <span class=n>minTypeDiffWeight</span> <span class=o>=</span> <span class=n>typeDiffWeight</span><span class=o>;</span>
+                <span class=n>ambiguousConstructors</span> <span class=o>=</span> <span class=kc>null</span><span class=o>;</span>
+            <span class=o>}</span> 
+            
+            <span class=cm>/* 
+</span><span class=cm>             * 如果两个构造方法与参数值类型列表之间的差异量一致，那么这两个方法都可以作为
+</span><span class=cm>             * 候选项，这个时候就出现歧义了，这里先把有歧义的构造方法放入 
+</span><span class=cm>             * ambiguousConstructors 集合中
+</span><span class=cm>             */</span>
+            <span class=k>else</span> <span class=k>if</span> <span class=o>(</span><span class=n>constructorToUse</span> <span class=o>!=</span> <span class=kc>null</span> <span class=o>&amp;&amp;</span> <span class=n>typeDiffWeight</span> <span class=o>==</span> <span class=n>minTypeDiffWeight</span><span class=o>)</span> <span class=o>{</span>
+                <span class=k>if</span> <span class=o>(</span><span class=n>ambiguousConstructors</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+                    <span class=n>ambiguousConstructors</span> <span class=o>=</span> <span class=k>new</span> <span class=n>LinkedHashSet</span><span class=o>&lt;&gt;();</span>
+                    <span class=n>ambiguousConstructors</span><span class=o>.</span><span class=na>add</span><span class=o>(</span><span class=n>constructorToUse</span><span class=o>);</span>
+                <span class=o>}</span>
+                <span class=n>ambiguousConstructors</span><span class=o>.</span><span class=na>add</span><span class=o>(</span><span class=n>candidate</span><span class=o>);</span>
+            <span class=o>}</span>
+        <span class=o>}</span>
+
+        <span class=c1>// 若上面未能筛选出合适的构造方法，这里将抛出 BeanCreationException 异常
+</span><span class=c1></span>        <span class=k>if</span> <span class=o>(</span><span class=n>constructorToUse</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+            <span class=k>if</span> <span class=o>(</span><span class=n>causes</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+                <span class=n>UnsatisfiedDependencyException</span> <span class=n>ex</span> <span class=o>=</span> <span class=n>causes</span><span class=o>.</span><span class=na>removeLast</span><span class=o>();</span>
+                <span class=k>for</span> <span class=o>(</span><span class=n>Exception</span> <span class=n>cause</span> <span class=o>:</span> <span class=n>causes</span><span class=o>)</span> <span class=o>{</span>
+                    <span class=k>this</span><span class=o>.</span><span class=na>beanFactory</span><span class=o>.</span><span class=na>onSuppressedException</span><span class=o>(</span><span class=n>cause</span><span class=o>);</span>
+                <span class=o>}</span>
+                <span class=k>throw</span> <span class=n>ex</span><span class=o>;</span>
+            <span class=o>}</span>
+            <span class=k>throw</span> <span class=k>new</span> <span class=n>BeanCreationException</span><span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>getResourceDescription</span><span class=o>(),</span> <span class=n>beanName</span><span class=o>,</span>
+                    <span class=s>&#34;Could not resolve matching constructor &#34;</span> <span class=o>+</span>
+                    <span class=s>&#34;(hint: specify index/type/name arguments for simple parameters to avoid type ambiguities)&#34;</span><span class=o>);</span>
+        <span class=o>}</span> 
+        
+         <span class=cm>/*
+</span><span class=cm>         * 如果 constructorToUse != null，且 ambiguousConstructors 也不为空，表明解析
+</span><span class=cm>         * 出了多个的合适的构造方法，此时就出现歧义了。Spring 不会擅自决定使用哪个构造方法，
+</span><span class=cm>         * 所以抛出异常。
+</span><span class=cm>         */</span>
+        <span class=k>else</span> <span class=k>if</span> <span class=o>(</span><span class=n>ambiguousConstructors</span> <span class=o>!=</span> <span class=kc>null</span> <span class=o>&amp;&amp;</span> <span class=o>!</span><span class=n>mbd</span><span class=o>.</span><span class=na>isLenientConstructorResolution</span><span class=o>())</span> <span class=o>{</span>
+            <span class=k>throw</span> <span class=k>new</span> <span class=n>BeanCreationException</span><span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>getResourceDescription</span><span class=o>(),</span> <span class=n>beanName</span><span class=o>,</span>
+                    <span class=s>&#34;Ambiguous constructor matches found in bean &#39;&#34;</span> <span class=o>+</span> <span class=n>beanName</span> <span class=o>+</span> <span class=s>&#34;&#39; &#34;</span> <span class=o>+</span>
+                    <span class=s>&#34;(hint: specify index/type/name arguments for simple parameters to avoid type ambiguities): &#34;</span> <span class=o>+</span>
+                    <span class=n>ambiguousConstructors</span><span class=o>);</span>
+        <span class=o>}</span>
+
+        <span class=k>if</span> <span class=o>(</span><span class=n>explicitArgs</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+             <span class=cm>/*
+</span><span class=cm>             * 缓存相关信息，比如：
+</span><span class=cm>             *   1. 已解析出的构造方法对象 resolvedConstructorOrFactoryMethod
+</span><span class=cm>             *   2. 构造方法参数列表是否已解析标志 constructorArgumentsResolved
+</span><span class=cm>             *   3. 参数值列表 resolvedConstructorArguments 或 preparedConstructorArguments
+</span><span class=cm>             *
+</span><span class=cm>             * 这些信息可用在其他地方，用于进行快捷判断
+</span><span class=cm>             */</span>
+            <span class=n>argsHolderToUse</span><span class=o>.</span><span class=na>storeCache</span><span class=o>(</span><span class=n>mbd</span><span class=o>,</span> <span class=n>constructorToUse</span><span class=o>);</span>
+        <span class=o>}</span>
+    <span class=o>}</span>
+
+    <span class=c1>// 创建 Bean 对象，并设置到 bw 中
+</span><span class=c1></span>    <span class=n>bw</span><span class=o>.</span><span class=na>setBeanInstance</span><span class=o>(</span><span class=n>instantiate</span><span class=o>(</span><span class=n>beanName</span><span class=o>,</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>constructorToUse</span><span class=o>,</span> <span class=n>argsToUse</span><span class=o>));</span>
+    <span class=k>return</span> <span class=n>bw</span><span class=o>;</span>
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><p>上面的方法逻辑比较复杂，做了不少事情，该方法的核心逻辑是根据参数值类型筛选合适的构造方法。解析出合适的构造方法后，剩下的工作就是构建 bean 对象了，这个工作交给了实例化策略去做。上面方法的整体流程为：</p><ol><li><p>创建 <code>BeanWrapperImpl </code>对象。</p></li><li><p>解析构造方法参数，并算出 <code>minNrOfArgs</code>。</p></li><li><p>获取构造方法列表，并排序。</p></li><li><p>遍历排序好的构造方法列表，筛选合适的构造方法。</p><ul><li><p>获取构造方法参数列表中每个参数的名称。</p></li><li><p>再次解析参数，此次解析会将value 属性值进行类型转换，由 String 转为合适的类型。</p></li><li><p>计算构造方法参数列表与参数值列表之间的类型差异量，以筛选出更为合适的构造方法。</p></li></ul></li><li><p>缓存已筛选出的构造方法以及参数值列表，若再次创建 bean 实例时，可直接使用，无需再次进行筛选。</p></li><li><p>使用初始化策略创建 bean 对象。</p></li><li><p>将 bean 对象放入 <code>BeanWrapperImpl </code>对象中，并返回该对象。</p></li></ol><p>下一小节将分析<code>instantiate</code>方法，以及通过反射和CGLIB 创建 Bean 对象。</p><h2 id=4--instantiate方法>4 <code>instantiate</code>方法</h2><p><code>instantiate</code>方法，对应上面代码的278行，代码如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>//ConstructorResolver.java
+</span><span class=c1></span>
+<span class=kd>private</span> <span class=n>Object</span> <span class=nf>instantiate</span><span class=o>(</span>
+			<span class=n>String</span> <span class=n>beanName</span><span class=o>,</span> <span class=n>RootBeanDefinition</span> <span class=n>mbd</span><span class=o>,</span> <span class=n>Constructor</span><span class=o>&lt;?&gt;</span> <span class=n>constructorToUse</span><span class=o>,</span> <span class=n>Object</span><span class=o>[]</span> <span class=n>argsToUse</span><span class=o>)</span> <span class=o>{</span>
+
+		<span class=k>try</span> <span class=o>{</span>
+			<span class=n>InstantiationStrategy</span> <span class=n>strategy</span> <span class=o>=</span> <span class=k>this</span><span class=o>.</span><span class=na>beanFactory</span><span class=o>.</span><span class=na>getInstantiationStrategy</span><span class=o>();</span>
+			<span class=k>if</span> <span class=o>(</span><span class=n>System</span><span class=o>.</span><span class=na>getSecurityManager</span><span class=o>()</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+				<span class=k>return</span> <span class=n>AccessController</span><span class=o>.</span><span class=na>doPrivileged</span><span class=o>((</span><span class=n>PrivilegedAction</span><span class=o>&lt;</span><span class=n>Object</span><span class=o>&gt;)</span> <span class=o>()</span> <span class=o>-&gt;</span>
+						<span class=n>strategy</span><span class=o>.</span><span class=na>instantiate</span><span class=o>(</span><span class=n>mbd</span><span class=o>,</span> <span class=n>beanName</span><span class=o>,</span> <span class=k>this</span><span class=o>.</span><span class=na>beanFactory</span><span class=o>,</span> <span class=n>constructorToUse</span><span class=o>,</span> <span class=n>argsToUse</span><span class=o>),</span>
+						<span class=k>this</span><span class=o>.</span><span class=na>beanFactory</span><span class=o>.</span><span class=na>getAccessControlContext</span><span class=o>());</span>
+			<span class=o>}</span>
+			<span class=k>else</span> <span class=o>{</span>
+                <span class=cm>/*
+</span><span class=cm>             	* 调用实例化策略创建实例，默认情况下使用反射创建实例。如果 bean 的配置信息中
+</span><span class=cm>             	* 包含 lookup-method 和 replace-method，则通过 CGLIB 增强 bean 实例
+</span><span class=cm>             	*/</span>
+				<span class=k>return</span> <span class=n>strategy</span><span class=o>.</span><span class=na>instantiate</span><span class=o>(</span><span class=n>mbd</span><span class=o>,</span> <span class=n>beanName</span><span class=o>,</span> <span class=k>this</span><span class=o>.</span><span class=na>beanFactory</span><span class=o>,</span> <span class=n>constructorToUse</span><span class=o>,</span> <span class=n>argsToUse</span><span class=o>);</span>
+			<span class=o>}</span>
+		<span class=o>}</span>
+		<span class=k>catch</span> <span class=o>(</span><span class=n>Throwable</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+			<span class=k>throw</span> <span class=k>new</span> <span class=n>BeanCreationException</span><span class=o>(</span><span class=n>mbd</span><span class=o>.</span><span class=na>getResourceDescription</span><span class=o>(),</span> <span class=n>beanName</span><span class=o>,</span>
+					<span class=s>&#34;Bean instantiation via constructor failed&#34;</span><span class=o>,</span> <span class=n>ex</span><span class=o>);</span>
+		<span class=o>}</span>
+	<span class=o>}</span>
+</code></pre></td></tr></table></div></div><p>上面第18行的<code>instantiate(mbd, beanName, this.beanFactory, constructorToUse, argsToUse)</code>代码如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>// SimpleInstantiationStrategy.java
+</span><span class=c1></span>
+<span class=nd>@Override</span>
+<span class=kd>public</span> <span class=n>Object</span> <span class=nf>instantiate</span><span class=o>(</span><span class=n>RootBeanDefinition</span> <span class=n>bd</span><span class=o>,</span> <span class=nd>@Nullable</span> <span class=n>String</span> <span class=n>beanName</span><span class=o>,</span> <span class=n>BeanFactory</span> <span class=n>owner</span><span class=o>,</span><span class=kd>final</span> <span class=n>Constructor</span><span class=o>&lt;?&gt;</span> <span class=n>ctor</span><span class=o>,</span> <span class=n>Object</span><span class=o>...</span> <span class=n>args</span><span class=o>)</span> <span class=o>{</span>
+    <span class=c1>// &lt;1&gt; 没有覆盖，直接使用反射实例化即可
+</span><span class=c1></span>    <span class=k>if</span> <span class=o>(!</span><span class=n>bd</span><span class=o>.</span><span class=na>hasMethodOverrides</span><span class=o>())</span> <span class=o>{</span>
+        <span class=k>if</span> <span class=o>(</span><span class=n>System</span><span class=o>.</span><span class=na>getSecurityManager</span><span class=o>()</span> <span class=o>!=</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+            <span class=c1>// 设置构造方法，可访问
+</span><span class=c1></span>            <span class=n>AccessController</span><span class=o>.</span><span class=na>doPrivileged</span><span class=o>((</span><span class=n>PrivilegedAction</span><span class=o>&lt;</span><span class=n>Object</span><span class=o>&gt;)</span> <span class=o>()</span> <span class=o>-&gt;</span> <span class=o>{</span>
+                <span class=n>ReflectionUtils</span><span class=o>.</span><span class=na>makeAccessible</span><span class=o>(</span><span class=n>ctor</span><span class=o>);</span>
+                <span class=k>return</span> <span class=kc>null</span><span class=o>;</span>
+            <span class=o>});</span>
+        <span class=o>}</span>
+        <span class=c1>// 通过 BeanUtils 直接使用构造器对象实例化 Bean 对象
+</span><span class=c1></span>        <span class=k>return</span> <span class=n>BeanUtils</span><span class=o>.</span><span class=na>instantiateClass</span><span class=o>(</span><span class=n>ctor</span><span class=o>,</span> <span class=n>args</span><span class=o>);</span>
+    <span class=o>}</span> <span class=k>else</span> <span class=o>{</span>
+        <span class=c1>// &lt;2&gt; 生成 CGLIB 创建的子类对象
+</span><span class=c1></span>        <span class=k>return</span> <span class=n>instantiateWithMethodInjection</span><span class=o>(</span><span class=n>bd</span><span class=o>,</span> <span class=n>beanName</span><span class=o>,</span> <span class=n>owner</span><span class=o>,</span> <span class=n>ctor</span><span class=o>,</span> <span class=n>args</span><span class=o>);</span>
+    <span class=o>}</span>
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><ul><li><code>&lt;1></code>处，如果该 bean 没有配置 <code>lookup-method</code>、<code>replaced-method</code> 标签或者 <code>@Lookup</code> 注解，则直接通过<strong>反射</strong>的方式实例化 Bean 对象即可。</li><li><code>&lt;2>处</code> ，使用 CGLIB 进行动态代理，因为可以在创建代理的同时将动态方法织入类中。</li></ul><h3 id=41-反射创建-bean-对象>4.1 反射创建 Bean 对象</h3><p>调用工具类 <code>BeanUtils</code> 的 <code>instantiateClass(Constructor ctor, Object... args)</code> 方法，完成反射工作，创建对象。代码如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>// BeanUtils.java
+</span><span class=c1></span>
+<span class=kd>public</span> <span class=kd>static</span> <span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span> <span class=n>T</span> <span class=nf>instantiateClass</span><span class=o>(</span><span class=n>Constructor</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span> <span class=n>ctor</span><span class=o>,</span> <span class=n>Object</span><span class=o>...</span> <span class=n>args</span><span class=o>)</span> <span class=kd>throws</span> <span class=n>BeanInstantiationException</span> <span class=o>{</span>
+    <span class=n>Assert</span><span class=o>.</span><span class=na>notNull</span><span class=o>(</span><span class=n>ctor</span><span class=o>,</span> <span class=s>&#34;Constructor must not be null&#34;</span><span class=o>);</span>
+    <span class=k>try</span> <span class=o>{</span>
+        <span class=c1>// 设置构造方法，可访问
+</span><span class=c1></span>        <span class=n>ReflectionUtils</span><span class=o>.</span><span class=na>makeAccessible</span><span class=o>(</span><span class=n>ctor</span><span class=o>);</span>
+        <span class=c1>// 使用构造方法，创建对象
+</span><span class=c1></span>        <span class=k>return</span> <span class=o>(</span><span class=n>KotlinDetector</span><span class=o>.</span><span class=na>isKotlinReflectPresent</span><span class=o>()</span> <span class=o>&amp;&amp;</span> <span class=n>KotlinDetector</span><span class=o>.</span><span class=na>isKotlinType</span><span class=o>(</span><span class=n>ctor</span><span class=o>.</span><span class=na>getDeclaringClass</span><span class=o>())</span> <span class=o>?</span>
+                <span class=n>KotlinDelegate</span><span class=o>.</span><span class=na>instantiateClass</span><span class=o>(</span><span class=n>ctor</span><span class=o>,</span> <span class=n>args</span><span class=o>)</span> <span class=o>:</span> <span class=n>ctor</span><span class=o>.</span><span class=na>newInstance</span><span class=o>(</span><span class=n>args</span><span class=o>));</span>
+    <span class=c1>// 各种异常的翻译，最终统一抛出 BeanInstantiationException 异常
+</span><span class=c1></span>    <span class=o>}</span> <span class=k>catch</span> <span class=o>(</span><span class=n>InstantiationException</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+        <span class=k>throw</span> <span class=k>new</span> <span class=n>BeanInstantiationException</span><span class=o>(</span><span class=n>ctor</span><span class=o>,</span> <span class=s>&#34;Is it an abstract class?&#34;</span><span class=o>,</span> <span class=n>ex</span><span class=o>);</span>
+    <span class=o>}</span> <span class=k>catch</span> <span class=o>(</span><span class=n>IllegalAccessException</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+        <span class=k>throw</span> <span class=k>new</span> <span class=n>BeanInstantiationException</span><span class=o>(</span><span class=n>ctor</span><span class=o>,</span> <span class=s>&#34;Is the constructor accessible?&#34;</span><span class=o>,</span> <span class=n>ex</span><span class=o>);</span>
+    <span class=o>}</span> <span class=k>catch</span> <span class=o>(</span><span class=n>IllegalArgumentException</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+        <span class=k>throw</span> <span class=k>new</span> <span class=n>BeanInstantiationException</span><span class=o>(</span><span class=n>ctor</span><span class=o>,</span> <span class=s>&#34;Illegal arguments for constructor&#34;</span><span class=o>,</span> <span class=n>ex</span><span class=o>);</span>
+    <span class=o>}</span> <span class=k>catch</span> <span class=o>(</span><span class=n>InvocationTargetException</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+        <span class=k>throw</span> <span class=k>new</span> <span class=n>BeanInstantiationException</span><span class=o>(</span><span class=n>ctor</span><span class=o>,</span> <span class=s>&#34;Constructor threw exception&#34;</span><span class=o>,</span> <span class=n>ex</span><span class=o>.</span><span class=na>getTargetException</span><span class=o>());</span>
+    <span class=o>}</span>
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><h3 id=42-cglib-创建-bean-对象>4.2 CGLIB 创建 Bean 对象</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>// SimpleInstantiationStrategy.java
+</span><span class=c1></span>
+<span class=kd>protected</span> <span class=n>Object</span> <span class=nf>instantiateWithMethodInjection</span><span class=o>(</span><span class=n>RootBeanDefinition</span> <span class=n>bd</span><span class=o>,</span> <span class=nd>@Nullable</span> <span class=n>String</span> <span class=n>beanName</span><span class=o>,</span> <span class=n>BeanFactory</span> <span class=n>owner</span><span class=o>)</span> <span class=o>{</span>
+	<span class=k>throw</span> <span class=k>new</span> <span class=n>UnsupportedOperationException</span><span class=o>(</span><span class=s>&#34;Method Injection not supported in SimpleInstantiationStrategy&#34;</span><span class=o>);</span>
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><p>方法默认是<strong>没有实现</strong>的，具体过程由其子类<code>CglibSubclassingInstantiationStrategy</code> 来实现。代码如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>// CglibSubclassingInstantiationStrategy.java
+</span><span class=c1></span>
+<span class=nd>@Override</span>
+<span class=kd>protected</span> <span class=n>Object</span> <span class=nf>instantiateWithMethodInjection</span><span class=o>(</span><span class=n>RootBeanDefinition</span> <span class=n>bd</span><span class=o>,</span> <span class=nd>@Nullable</span> <span class=n>String</span> <span class=n>beanName</span><span class=o>,</span> <span class=n>BeanFactory</span> <span class=n>owner</span><span class=o>)</span> <span class=o>{</span>
+    <span class=k>return</span> <span class=n>instantiateWithMethodInjection</span><span class=o>(</span><span class=n>bd</span><span class=o>,</span> <span class=n>beanName</span><span class=o>,</span> <span class=n>owner</span><span class=o>,</span> <span class=kc>null</span><span class=o>);</span>
+<span class=o>}</span>
+<span class=nd>@Override</span>
+<span class=kd>protected</span> <span class=n>Object</span> <span class=nf>instantiateWithMethodInjection</span><span class=o>(</span><span class=n>RootBeanDefinition</span> <span class=n>bd</span><span class=o>,</span> <span class=nd>@Nullable</span> <span class=n>String</span> <span class=n>beanName</span><span class=o>,</span> <span class=n>BeanFactory</span> <span class=n>owner</span><span class=o>,</span> <span class=nd>@Nullable</span> <span class=n>Constructor</span><span class=o>&lt;?&gt;</span> <span class=n>ctor</span><span class=o>,</span> <span class=n>Object</span><span class=o>...</span> <span class=n>args</span><span class=o>)</span> <span class=o>{</span>
+    <span class=c1>// Must generate CGLIB subclass...
+</span><span class=c1></span>    <span class=c1>// 通过CGLIB生成一个子类对象
+</span><span class=c1></span>    <span class=k>return</span> <span class=k>new</span> <span class=n>CglibSubclassCreator</span><span class=o>(</span><span class=n>bd</span><span class=o>,</span> <span class=n>owner</span><span class=o>).</span><span class=na>instantiate</span><span class=o>(</span><span class=n>ctor</span><span class=o>,</span> <span class=n>args</span><span class=o>);</span>
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><p>创建一个 <code>CglibSubclassCreator</code> 对象，后调用其 <code>#instantiate(Constructor ctor, Object... args)</code> 方法，生成其子类对象。代码如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-java data-lang=java><span class=c1>// CglibSubclassingInstantiationStrategy.java
+</span><span class=c1></span>
+<span class=kd>public</span> <span class=n>Object</span> <span class=nf>instantiate</span><span class=o>(</span><span class=nd>@Nullable</span> <span class=n>Constructor</span><span class=o>&lt;?&gt;</span> <span class=n>ctor</span><span class=o>,</span> <span class=n>Object</span><span class=o>...</span> <span class=n>args</span><span class=o>)</span> <span class=o>{</span>
+    <span class=c1>// 通过 Cglib 创建一个代理类
+</span><span class=c1></span>    <span class=n>Class</span><span class=o>&lt;?&gt;</span> <span class=n>subclass</span> <span class=o>=</span> <span class=n>createEnhancedSubclass</span><span class=o>(</span><span class=k>this</span><span class=o>.</span><span class=na>beanDefinition</span><span class=o>);</span>
+    <span class=n>Object</span> <span class=n>instance</span><span class=o>;</span>
+    <span class=c1>// 没有构造器，通过 BeanUtils 使用默认构造器创建一个bean实例
+</span><span class=c1></span>    <span class=k>if</span> <span class=o>(</span><span class=n>ctor</span> <span class=o>==</span> <span class=kc>null</span><span class=o>)</span> <span class=o>{</span>
+        <span class=n>instance</span> <span class=o>=</span> <span class=n>BeanUtils</span><span class=o>.</span><span class=na>instantiateClass</span><span class=o>(</span><span class=n>subclass</span><span class=o>);</span>
+    <span class=o>}</span> <span class=k>else</span> <span class=o>{</span>
+        <span class=k>try</span> <span class=o>{</span>
+            <span class=c1>// 获取代理类对应的构造器对象，并实例化 bean
+</span><span class=c1></span>            <span class=n>Constructor</span><span class=o>&lt;?&gt;</span> <span class=n>enhancedSubclassConstructor</span> <span class=o>=</span> <span class=n>subclass</span><span class=o>.</span><span class=na>getConstructor</span><span class=o>(</span><span class=n>ctor</span><span class=o>.</span><span class=na>getParameterTypes</span><span class=o>());</span>
+            <span class=n>instance</span> <span class=o>=</span> <span class=n>enhancedSubclassConstructor</span><span class=o>.</span><span class=na>newInstance</span><span class=o>(</span><span class=n>args</span><span class=o>);</span>
+        <span class=o>}</span> <span class=k>catch</span> <span class=o>(</span><span class=n>Exception</span> <span class=n>ex</span><span class=o>)</span> <span class=o>{</span>
+            <span class=k>throw</span> <span class=k>new</span> <span class=n>BeanInstantiationException</span><span class=o>(</span><span class=k>this</span><span class=o>.</span><span class=na>beanDefinition</span><span class=o>.</span><span class=na>getBeanClass</span><span class=o>(),</span>
+                    <span class=s>&#34;Failed to invoke constructor for CGLIB enhanced subclass [&#34;</span> <span class=o>+</span> <span class=n>subclass</span><span class=o>.</span><span class=na>getName</span><span class=o>()</span> <span class=o>+</span> <span class=s>&#34;]&#34;</span><span class=o>,</span> <span class=n>ex</span><span class=o>);</span>
+        <span class=o>}</span>
+    <span class=o>}</span>
+    <span class=c1>// 为了避免 memory leaks 异常，直接在 bean 实例上设置回调对象
+</span><span class=c1></span>    <span class=n>Factory</span> <span class=n>factory</span> <span class=o>=</span> <span class=o>(</span><span class=n>Factory</span><span class=o>)</span> <span class=n>instance</span><span class=o>;</span>
+    <span class=n>factory</span><span class=o>.</span><span class=na>setCallbacks</span><span class=o>(</span><span class=k>new</span> <span class=n>Callback</span><span class=o>[]</span> <span class=o>{</span><span class=n>NoOp</span><span class=o>.</span><span class=na>INSTANCE</span><span class=o>,</span>
+            <span class=k>new</span> <span class=n>LookupOverrideMethodInterceptor</span><span class=o>(</span><span class=k>this</span><span class=o>.</span><span class=na>beanDefinition</span><span class=o>,</span> <span class=k>this</span><span class=o>.</span><span class=na>owner</span><span class=o>),</span>
+            <span class=k>new</span> <span class=n>ReplaceOverrideMethodInterceptor</span><span class=o>(</span><span class=k>this</span><span class=o>.</span><span class=na>beanDefinition</span><span class=o>,</span> <span class=k>this</span><span class=o>.</span><span class=na>owner</span><span class=o>)});</span>
+    <span class=k>return</span> <span class=n>instance</span><span class=o>;</span>
+<span class=o>}</span>
+</code></pre></td></tr></table></div></div><h2 id=小结>小结</h2><p><code>createBeanInstance</code>已经分析完毕了,其中工厂方法初始化和默认构造函数注入没有分析。有一个很重要的原因就是，构造函数自动注入初始化即<code>autowireConstructor</code>的方法实在是太长了，逻辑很复杂，分析完已经晕了，哈哈。很感谢一些博主，因为他们的博文，我看起源码来才能更快的理解。继续加油！</p></div><div class=post-footer id=post-footer><div class=post-info><div class=post-info-line><div class=post-info-mod><span>本文于 2020-05-02 更新</span></div><div class=post-info-license></div></div><div class=post-info-line><div class=post-info-md><span><a class=link-to-markdown href=/posts/ioc-createbean-2/index.md target=_blank>阅读原始文档</a></span></div><div class=post-info-share><span><a href=javascript:void(0); title="分享到 微博" data-sharer=weibo data-url=https://cool-sen.github.io/posts/ioc-createbean-2/ data-title=创建bean的实例><i class="fab fa-weibo fa-fw"></i></a><a href=javascript:void(0); title="分享到 百度" data-sharer=baidu data-url=https://cool-sen.github.io/posts/ioc-createbean-2/ data-title=创建bean的实例><i class="loveit it-baidu-fill"></i></a><a href=javascript:void(0); title="分享到 Evernote" data-sharer=evernote data-url=https://cool-sen.github.io/posts/ioc-createbean-2/ data-title=创建bean的实例><i class="fab fa-evernote fa-fw"></i></a></span></div></div></div><div class=post-info-more><section><i class="fas fa-tags fa-fw"></i>&nbsp;<a href=/tags/spring>Spring</a>,&nbsp;<a href=/tags/ioc>IOC</a></section><section><span><a href=javascript:window.history.back();>返回</a></span>&nbsp;|&nbsp;<span><a href=/>主页</a></span></section></div><div class=post-nav><a href=/posts/ioc-create-bean/ class=prev rel=prev title="IOC CreateBean"><i class="fas fa-angle-left fa-fw"></i>IOC CreateBean</a>
+<a href=/posts/ioc-createbean-3/ class=next rel=next title=创建Bean-属性填充>创建Bean-属性填充<i class="fas fa-angle-right fa-fw"></i></a></div></div><div class=comment><div id=valine></div><script>document.addEventListener("DOMContentLoaded",function(event){new Valine({el:'#valine',appId:'EVeKQGJoyzwUXAUhbwnrWRef-gzGzoHsz',appKey:'YMah0NIRauENVCUV8o5vhPMN',placeholder:'说点什么吧...',verify:true,avatar:'mm',pageSize:10,lang:'en',visitor:true,recordIP:true,});});</script><noscript>Please enable JavaScript to view the <a href=https://valine.js.org/>comments powered by Valine.</a></noscript></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line>由 <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> 强力驱动 | 主题 - <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer"><i class="far fa-heart fa-fw"></i>LoveIt</a></div><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2019 - 2020</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=/ target=_blank>shuaisenma</a></span>&nbsp;|&nbsp;<span class=license><a rel="license external nofollow noopener noreffer" href=https://creativecommons.org/licenses/by-nc/4.0/ target=_blank>CC BY-NC 4.0</a></span></div></div></footer></div><a href=# class="dynamic-to-top animated faster" id=dynamic-to-top><i class="fas fa-chevron-up fa-fw"></i></a><script>document.addEventListener('DOMContentLoaded',function(){lightGallery(document.getElementById('content'),{selector:'.lightgallery',speed:400,hideBarsDelay:2000,thumbnail:true,exThumbImage:'data-thumbnail',thumbWidth:80,thumbContHeight:80,});});</script><link rel=stylesheet href=/lib/valine/valine.css><link rel=stylesheet href=/lib/iconfont/iconfont.min.css><link rel=stylesheet href=/lib/lightgallery/lightgallery.min.css><script src=https://cdn.staticfile.org/valine/1.3.10/Valine.min.js></script><script src=https://cdn.staticfile.org/smooth-scroll/16.1.0/smooth-scroll.polyfills.min.js></script><script src=https://cdn.staticfile.org/lazysizes/5.2.0/lazysizes.min.js></script><script src=/lib/sharer/sharer.min.js></script><script src=/lib/lightgallery/lightgallery.min.js></script><script src=/lib/lightgallery/lg-thumbnail.min.js></script><script src=/lib/lightgallery/lg-zoom.min.js></script><script src=/js/theme.min.js></script><script type=application/javascript>var doNotTrack=false;if(!doNotTrack){window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;ga('create','UA-105751499-1','auto');ga('set','anonymizeIp',true);ga('send','pageview');}</script><script async src=https://www.google-analytics.com/analytics.js></script></body></html>

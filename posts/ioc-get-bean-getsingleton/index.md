@@ -1,6 +1,8 @@
 # Spring-IOC-从单例缓存中获取单例 Bean
 
 
+获取单例Bean
+
 ## 1 `getSingleton`
 
 ```java
