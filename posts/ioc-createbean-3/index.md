@@ -1,4 +1,4 @@
-# 创建Bean-属性填充
+# Spring-IOC-创建Bean-属性填充
 
 
 ## 1 简介
@@ -252,7 +252,154 @@ protected void autowireByType(String beanName, AbstractBeanDefinition mbd, BeanW
 
 和 autowireByName 一样，autowireByType 首先也是获取非简单类型属性的名称。然后再根据属性名获取属性描述符，并由属性描述符获取方法参数对象 MethodParameter，随后再根据 MethodParameter 对象获取依赖描述符对象，整个过程为 `beanName → PropertyDescriptor → MethodParameter → DependencyDescriptor`。在获取到依赖描述符对象后，再根据依赖描述符解析出合适的依赖。最后将解析出的结果存入属性列表 pvs 中即可。
 
-相对于 `autowireByName` 方法而言，根据类型寻找相匹配的 bean 过程比较复杂。即`resolveDependency`方法，此方法的解析之后会补上。
+相对于 `autowireByName` 方法而言，根据类型寻找相匹配的 bean 过程比较复杂。即`resolveDependency`方法，下面分析该方法。
+
+#### 2.3.1 `resolveDependency`方法分析
+
+```java
+// DefaultListableBeanFactory.java
+
+private static Class<?> javaxInjectProviderClass;
+
+static {
+	try {
+		javaxInjectProviderClass = ClassUtils.forName("javax.inject.Provider", DefaultListableBeanFactory.class.getClassLoader());
+	} catch (ClassNotFoundException ex) {
+		javaxInjectProviderClass = null;
+	}
+}
+
+public Object resolveDependency(DependencyDescriptor descriptor, @Nullable String requestingBeanName,
+        @Nullable Set<String> autowiredBeanNames, @Nullable TypeConverter typeConverter) throws BeansException {
+    // 初始化参数名称发现器，该方法并不会在这个时候尝试检索参数名称
+    // getParameterNameDiscoverer 返回 parameterNameDiscoverer 实例，parameterNameDiscoverer 方法参数名称的解析器
+    descriptor.initParameterNameDiscovery(getParameterNameDiscoverer());
+    // 依赖类型为 Optional 类型
+    if (Optional.class == descriptor.getDependencyType()) {
+        return createOptionalDependency(descriptor, requestingBeanName);
+    // 依赖类型为ObjectFactory、ObjectProvider
+    } else if (ObjectFactory.class == descriptor.getDependencyType() ||
+            ObjectProvider.class == descriptor.getDependencyType()) {
+        return new DependencyObjectProvider(descriptor, requestingBeanName);
+    // javaxInjectProviderClass 类注入的特殊处理
+    } else if (javaxInjectProviderClass == descriptor.getDependencyType()) {
+        return new Jsr330Factory().createDependencyProvider(descriptor, requestingBeanName);
+    } else {
+        // 为实际依赖关系目标的延迟解析构建代理
+        // 默认实现返回 null
+        Object result = getAutowireCandidateResolver().getLazyResolutionProxyIfNecessary(descriptor, requestingBeanName);
+        if (result == null) {
+            // 通用处理逻辑
+            result = doResolveDependency(descriptor, requestingBeanName, autowiredBeanNames, typeConverter);
+        }
+        return result;
+    }
+}
+```
+
+这里我们关注**通用处理逻辑** `doResolveDependency`方法，代码如下：
+
+```java
+// DefaultListableBeanFactory.java
+
+public Object doResolveDependency(DependencyDescriptor descriptor, @Nullable String beanName,
+    @Nullable Set<String> autowiredBeanNames, @Nullable TypeConverter typeConverter) throws BeansException {
+    // 注入点
+    InjectionPoint previousInjectionPoint = ConstructorResolver.setCurrentInjectionPoint(descriptor);
+    try {
+        // 针对给定的工厂给定一个快捷实现的方式，例如考虑一些预先解析的信息
+        // 在进入所有bean的常规类型匹配算法之前，解析算法将首先尝试通过此方法解析快捷方式。
+        // 子类可以覆盖此方法
+        Object shortcut = descriptor.resolveShortcut(this);
+        if (shortcut != null) {
+            // 返回快捷的解析信息
+            return shortcut;
+        }
+        // 依赖的类型
+        Class<?> type = descriptor.getDependencyType();
+        // 支持 Spring 的注解 @value
+        Object value = getAutowireCandidateResolver().getSuggestedValue(descriptor);
+        if (value != null) {
+            if (value instanceof String) {
+                String strVal = resolveEmbeddedValue((String) value);
+                BeanDefinition bd = (beanName != null && containsBean(beanName) ? getMergedBeanDefinition(beanName) : null);
+                value = evaluateBeanDefinitionString(strVal, bd);
+            }
+            TypeConverter converter = (typeConverter != null ? typeConverter : getTypeConverter());
+            return (descriptor.getField() != null ?
+                    converter.convertIfNecessary(value, type, descriptor.getField()) :
+                    converter.convertIfNecessary(value, type, descriptor.getMethodParameter()));
+        }
+        // 解析复合 bean，其实就是对 bean 的属性进行解析
+        // 包括：数组、Collection 、Map 类型
+        Object multipleBeans = resolveMultipleBeans(descriptor, beanName, autowiredBeanNames, typeConverter);
+        if (multipleBeans != null) {
+            return multipleBeans;
+        }
+        // 查找与类型相匹配的 bean
+        // 返回值构成为：key = 匹配的 beanName，value = beanName 对应的实例化 bean
+        Map<String, Object> matchingBeans = findAutowireCandidates(beanName, type, descriptor);
+        // 没有找到，检验 @autowire  的 require 是否为 true
+        if (matchingBeans.isEmpty()) {
+            // 如果 @autowire 的 require 属性为 true ，但是没有找到相应的匹配项，则抛出异常
+            if (isRequired(descriptor)) {
+                raiseNoMatchingBeanFound(type, descriptor.getResolvableType(), descriptor);
+            }
+            return null;
+        }
+        String autowiredBeanName;
+        Object instanceCandidate;
+        if (matchingBeans.size() > 1) {
+            // 确认给定 bean autowire 的候选者
+            // 按照 @Primary 和 @Priority 的顺序
+            autowiredBeanName = determineAutowireCandidate(matchingBeans, descriptor);
+            if (autowiredBeanName == null) {
+                if (isRequired(descriptor) || !indicatesMultipleBeans(type)) {
+                    // 唯一性处理
+                    return descriptor.resolveNotUnique(descriptor.getResolvableType(), matchingBeans);
+                }
+                else {
+                    // 在可选的Collection / Map的情况下，默默地忽略一个非唯一的情况：可能它是一个多个常规bean的空集合
+                    return null;
+                }
+            }
+            instanceCandidate = matchingBeans.get(autowiredBeanName);
+        } else {
+            Map.Entry<String, Object> entry = matchingBeans.entrySet().iterator().next();
+            autowiredBeanName = entry.getKey();
+            instanceCandidate = entry.getValue();
+        }
+        if (autowiredBeanNames != null) {
+            autowiredBeanNames.add(autowiredBeanName);
+        }
+        if (instanceCandidate instanceof Class) {
+            instanceCandidate = descriptor.resolveCandidate(autowiredBeanName, type, this);
+        }
+        Object result = instanceCandidate;
+        if (result instanceof NullBean) {
+            if (isRequired(descriptor)) {
+                raiseNoMatchingBeanFound(type, descriptor.getResolvableType(), descriptor);
+            }
+            result = null;
+        }
+        if (!ClassUtils.isAssignableValue(type, result)) {
+            throw new BeanNotOfRequiredTypeException(autowiredBeanName, type, instanceCandidate.getClass());
+        }
+        return result;
+    } finally {
+        ConstructorResolver.setCurrentInjectionPoint(previousInjectionPoint);
+    }
+}
+```
+
+总结一下`doResolveDependency `方法的大概流程。
+
+1. 首先将 beanName 和 requiredType 作为参数，并尝试从 `BeanFactory `中获取与此对于的 bean。若获取成功，就可以提前结束 `doResolveDependency `方法的逻辑。
+2. 处理 @value 注解。
+3. 解析数组、List、Map 等类型的依赖，如果解析结果不为空，则返回结果。
+4. 根据类型查找合适的候选项。
+5. 如果候选项的数量为0，则抛出异常。为1，直接从候选列表中取出即可。若候选项数量 > 1，则在多个候选项中确定最优候选项，若无法确定则抛出异常。
+6. 若候选项是 Class 类型，表明候选项还没实例化，此时通过 `BeanFactory.getBean` 方法对其进行实例化。若候选项是非 Class 类型，则表明已经完成了实例化，此时直接返回即可。
 
 ### 2.4 `applyPropertyValues` 方法分析
 
@@ -367,8 +514,7 @@ protected void applyPropertyValues(String beanName, BeanDefinition mbd, BeanWrap
              *   </bean>
              * 
              * isNestedOrIndexedProperty 会根据 propertyName 中是否包含 . 或 [  返回 
-             * true 和 false。包含则返回 true，否则返回 false。关于 nested 类型的属性，我
-             * 没在实践中用过，所以不知道上面举的例子是不是合理。若不合理，欢迎指正，也请多多指教。
+             * true 和 false。包含则返回 true，否则返回 false。
              * 关于 nested 类型的属性，大家还可以参考 Spring 的官方文档：
              *     https://docs.spring.io/spring/docs/4.3.17.RELEASE/spring-framework-reference/htmlsingle/#beans-beans-conventions
              */
@@ -428,6 +574,10 @@ protected void applyPropertyValues(String beanName, BeanDefinition mbd, BeanWrap
 3. 对解析后的属性值 resolvedValue 进行类型转换。
 4. 将类型转换后的属性值设置到 PropertyValue 对象中，并将 PropertyValue 对象存入 deepCopy 集合中
 5. 将 deepCopy 中的属性信息注入到 bean 对象中。
+
+## 3 小结
+
+至此，`doCreateBean` 方法的第二个过程：**属性填充**已经分析完成了。
 
 ## 参考
 
