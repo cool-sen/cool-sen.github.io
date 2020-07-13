@@ -1,0 +1,92 @@
+<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta http-equiv=x-ua-compatible content="IE=edge, chrome=1"><title>﻿Redis数据类型-简单动态字符串 | Recording</title><meta name=Description content="recording my life"><meta property="og:title" content="﻿Redis数据类型-简单动态字符串"><meta property="og:description" content="Sds （Simple Dynamic String，简单动态字符串）是 Redis 底层所使用的字符串表示， 几乎所有的 Redis 模块中都用了 sds。 sds 的用途 Sds 在 Redis 中的主要作用有以下"><meta property="og:type" content="article"><meta property="og:url" content="https://cool-sen.github.io/posts/redis-sds/"><meta property="article:published_time" content="2020-05-08T19:38:57+08:00"><meta property="article:modified_time" content="2020-05-08T19:38:57+08:00"><meta name=twitter:card content="summary"><meta name=twitter:title content="﻿Redis数据类型-简单动态字符串"><meta name=twitter:description content="Sds （Simple Dynamic String，简单动态字符串）是 Redis 底层所使用的字符串表示， 几乎所有的 Redis 模块中都用了 sds。 sds 的用途 Sds 在 Redis 中的主要作用有以下"><meta name=theme-color content="#ffffff"><meta name=msapplication-TileColor content="#da532c"><link rel=canonical href=https://cool-sen.github.io/posts/redis-sds/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><link rel=prev href=https://cool-sen.github.io/posts/ioc-createbean-4/><link rel=next href=https://cool-sen.github.io/posts/redis-dict/><link href=https://cdn.staticfile.org/font-awesome/5.12.1/css/all.min.css rel=stylesheet><link href=https://cdn.staticfile.org/animate.css/3.7.2/animate.css rel=stylesheet><link rel=stylesheet href=/css/style.min.css><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"﻿Redis数据类型-简单动态字符串","inLanguage":"zh-CN","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/cool-sen.github.io\/posts\/redis-sds\/"},"image":{"@type":"ImageObject","url":"https:\/\/cool-sen.github.io\/","width":800,"height":600},"genre":"posts","keywords":"Redis, 数据类型","wordcount":1135,"url":"https:\/\/cool-sen.github.io\/posts\/redis-sds\/","datePublished":"2020-05-08","dateModified":"2020-05-08","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"ZhaoQiang","logo":{"@type":"ImageObject","url":"https:\/\/cool-sen.github.io\/","width":127,"height":40}},"author":{"@type":"Person","name":"shuaisenma"},"description":""}</script></head><body><script>if(!window.localStorage||!window.localStorage.getItem('theme')){window.isDark=window.matchMedia('(prefers-color-scheme: dark)').matches;}else{window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';}
+window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><header class=desktop id=header-desktop><div class=header-wrapper><div class=header-title><a href=/>Recording</a></div><div class=menu><a class=menu-item href=/posts rel="noopener noreffer">文章</a><a class=menu-item href=/tags rel="noopener noreffer">标签</a><a class=menu-item href=/categories rel="noopener noreffer">分类</a><a class=menu-item href=/about rel="noopener noreffer">关于</a><span class=menu-item>|</span>
+<a href=javascript:void(0); class="menu-item theme-switch" title=切换主题><i class="fas fa-adjust fa-fw"></i></a></div></div></header><header class=mobile id=header-mobile><div class=header-wrapper><div class=header-container><div class=header-title><a href=/>Recording</a></div><div class=menu-toggle id=menu-toggle-mobile><span></span><span></span><span></span></div></div><div class=menu id=menu-mobile><a class=menu-item href=/posts rel="noopener noreffer">文章</a><a class=menu-item href=/tags rel="noopener noreffer">标签</a><a class=menu-item href=/categories rel="noopener noreffer">分类</a><a class=menu-item href=/about rel="noopener noreffer">关于</a><a href=javascript:void(0); class="menu-item theme-switch" title=切换主题>
+<i class="fas fa-adjust fa-fw"></i></a></div></div></header><script>window.desktopHeaderMode="fixed";window.mobileHeaderMode="auto";</script><main class=main><div class=container><article class="page single"><h1 class="single-title animated flipInX">﻿Redis数据类型-简单动态字符串</h1><div class=post-meta><div class=post-meta-line><span class=post-author><a href=/ title=Author rel="noopener noreffer author" class=author><i class="fas fa-user-circle fa-fw"></i>shuaisenma</a>
+</span>&nbsp;
+<span class=post-category>收录于<a href=/categories/redis%E7%B3%BB%E5%88%97>
+<i class="far fa-folder fa-fw"></i>Redis系列</a></span></div><div class=post-meta-line><i class="far fa-calendar-alt fa-fw"></i><time datetime=2020-05-08>2020-05-08</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>约 1135 字&nbsp;
+<i class="far fa-clock fa-fw"></i>预计阅读 3 分钟&nbsp;<span id=/posts/redis-sds/ class=leancloud_visitors data-flag-title=﻿Redis数据类型-简单动态字符串>
+<i class="far fa-eye fa-fw"></i><span class=leancloud-visitors-count></span>&nbsp;次阅读
+</span>&nbsp;</div></div><div class=toc id=toc-auto><h2 class=toc-title>目录</h2><div class="toc-content always-active" id=toc-content-auto></div></div><div class=toc id=toc-static><details><summary><div class=toc-title><span>目录</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=toc-content id=toc-content-static><nav id=TableOfContents><ul><li><a href=#sds-的用途>sds 的用途</a><ul><li><a href=#1-实现字符串对象>1. 实现字符串对象</a></li><li><a href=#2-用-sds-取代-c-默认的-char-类型>2. 用 sds 取代 C 默认的 char* 类型</a></li></ul></li><li><a href=#redis-中的字符串-设计>Redis 中的字符串 设计</a><ul><li><a href=#1-c-语言字符串缺点>1. C 语言字符串缺点</a></li><li><a href=#2-sds-的实现>2. sds 的实现</a></li><li><a href=#3-优化追加操作>3. 优化追加操作</a></li></ul></li></ul></nav></div></details></div><div class=content id=content><p>Sds （Simple Dynamic String，简单动态字符串）是 Redis 底层所使用的字符串表示， 几乎所有的 Redis 模块中都用了 sds。</p><h2 id=sds-的用途>sds 的用途</h2><p>Sds 在 Redis 中的主要作用有以下两个：</p><ol><li>实现字符串对象（StringObject）；</li><li>在 Redis 程序内部用作 <code>char*</code> 类型的替代品；</li></ol><h3 id=1-实现字符串对象>1. 实现字符串对象</h3><p>Redis 是一个键值对数据库（key-value DB）， 数据库的值可以是字符串、集合、列表等多种类型的对象， 而数据库的键则总是字符串对象。</p><h3 id=2-用-sds-取代-c-默认的-char-类型>2. 用 sds 取代 C 默认的 char* 类型</h3><p>因为 <code>char*</code> 类型的功能单一， 抽象层次低， 并且不能高效地支持一些 Redis 常用的操作（比如追加操作和长度计算操作）， 所以在 Redis 程序内部， 绝大部分情况下都会使用 sds 而不是 <code>char*</code> 来表示字符串。</p><h2 id=redis-中的字符串-设计>Redis 中的字符串 设计</h2><h3 id=1-c-语言字符串缺点>1. C 语言字符串缺点</h3><p>在 C 语言中，字符串可以用一个 <code>\0</code> 结尾的 <code>char</code> 数组来表示。</p><p>比如说， <code>hello world</code> 在 C 语言中就可以表示为 <code>"hello world\0"</code> 。</p><p>这种简单的字符串表示，在大多数情况下都能满足要求，但是，它并不能高效地支持长度计算和追加（append）这两种操作：</p><ul><li>每次计算字符串长度（<code>strlen(s)</code>）的复杂度为 θ(N)θ(N) 。</li><li>对字符串进行 N 次追加，必定需要对字符串进行 N 次内存重分配（<code>realloc</code>）。</li></ul><p>Redis 的字符串表示还应该是<a href=http://en.wikipedia.org/wiki/Binary-safe target=_blank rel="noopener noreffer">二进制安全的</a>
+： 程序不应对字符串里面保存的数据做任何假设， 数据可以是以 <code>\0</code> 结尾的 C 字符串</p><p>考虑到这两个原因， Redis 使用 sds 类型替换了 C 语言的默认字符串表示： sds 既可高效地实现追加和长度计算， 同时是二进制安全的。</p><h3 id=2-sds-的实现>2. sds 的实现</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-fallback data-lang=fallback>typedef char *sds;
+
+struct sdshdr {
+
+    // buf 已占用长度
+    int len;
+
+    // buf 剩余可用长度
+    int free;
+
+    // 实际保存字符串数据的地方
+    char buf[];
+};
+</code></pre></td></tr></table></div></div><p>其中，类型 <code>sds</code> 是 <code>char *</code> 的别名（alias），而结构 <code>sdshdr</code> 则保存了 <code>len</code> 、 <code>free</code> 和 <code>buf</code> 三个属性。</p><ul><li>通过 <code>len</code> 属性， <code>sdshdr</code> 可以实现复杂度为 θ(1) 的长度计算操作。</li><li>通过对 <code>buf</code> 分配一些额外的空间， 并使用 <code>free</code> 记录未使用空间的大小， <code>sdshdr</code> 可以让执行追加操作所需的内存重分配次数大大减少</li></ul><h3 id=3-优化追加操作>3. 优化追加操作</h3><p>内存分配策略</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-fallback data-lang=fallback>def sdsMakeRoomFor(sdshdr, required_len):
+
+    # 预分配空间足够，无须再进行空间分配
+    if (sdshdr.free &gt;= required_len):
+        return sdshdr
+
+    # 计算新字符串的总长度
+    newlen = sdshdr.len + required_len
+
+    # 如果新字符串的总长度小于 SDS_MAX_PREALLOC
+    # 那么为字符串分配 2 倍于所需长度的空间
+    # 否则就分配所需长度加上 SDS_MAX_PREALLOC 数量的空间
+    if newlen &lt; SDS_MAX_PREALLOC:
+        newlen *= 2
+    else:
+        newlen += SDS_MAX_PREALLOC
+
+    # 分配内存
+    newsh = zrelloc(sdshdr, sizeof(struct sdshdr)+newlen+1)
+
+    # 更新 free 属性
+    newsh.free = newlen - sdshdr.len
+
+    # 返回
+    return newsh
+</code></pre></td></tr></table></div></div><p>在目前版本的 Redis 中， <code>SDS_MAX_PREALLOC</code> 的值为 <code>1024 * 1024</code></p><p>总结：</p><ul><li>当大小小于 <code>1MB</code> 的字符串执行追加操作时， <code>sdsMakeRoomFor</code> 就为它们分配多于所需大小一倍的空间</li><li>当字符串的大小大于 <code>1MB</code> ， 那么 <code>sdsMakeRoomFor</code> 就为它们额外多分配 <code>1MB</code> 的空间</li></ul><p>分配策略浪费空间吗？</p><ul><li>因为执行 <a href=http://redis.readthedocs.org/en/latest/string/append.html#append target=_blank rel="noopener noreffer">APPEND</a>
+命令的字符串键数量通常并不多， 占用内存的体积通常也不大， 所以这一般并不算什么问题</li><li>另一方面， 如果执行 <a href=http://redis.readthedocs.org/en/latest/string/append.html#append target=_blank rel="noopener noreffer">APPEND</a>
+操作的键很多， 而字符串的体积又很大的话， 那可能就需要修改 Redis 服务器， 让它定时释放一些字符串键的预分配空间， 从而更有效地使用内存。</li></ul></div><div class=post-footer id=post-footer><div class=post-info><div class=post-info-line><div class=post-info-mod><span>本文于 2020-05-08 更新</span></div><div class=post-info-license></div></div><div class=post-info-line><div class=post-info-md><span><a class=link-to-markdown href=/posts/redis-sds/index.md target=_blank>阅读原始文档</a></span></div><div class=post-info-share><span><a href=javascript:void(0); title="分享到 微博" data-sharer=weibo data-url=https://cool-sen.github.io/posts/redis-sds/ data-title=﻿Redis数据类型-简单动态字符串><i class="fab fa-weibo fa-fw"></i></a><a href=javascript:void(0); title="分享到 百度" data-sharer=baidu data-url=https://cool-sen.github.io/posts/redis-sds/ data-title=﻿Redis数据类型-简单动态字符串><i class="loveit it-baidu-fill"></i></a><a href=javascript:void(0); title="分享到 Evernote" data-sharer=evernote data-url=https://cool-sen.github.io/posts/redis-sds/ data-title=﻿Redis数据类型-简单动态字符串><i class="fab fa-evernote fa-fw"></i></a></span></div></div></div><div class=post-info-more><section><i class="fas fa-tags fa-fw"></i>&nbsp;<a href=/tags/redis>Redis</a>,&nbsp;<a href=/tags/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B>数据类型</a></section><section><span><a href=javascript:window.history.back();>返回</a></span>&nbsp;|&nbsp;<span><a href=/>主页</a></span></section></div><div class=post-nav><a href=/posts/ioc-createbean-4/ class=prev rel=prev title=Spring-IOC-创建Bean-循环依赖处理><i class="fas fa-angle-left fa-fw"></i>Spring-IOC-创建Bean-循环依赖处理</a>
+<a href=/posts/redis-dict/ class=next rel=next title=Redis数据类型-字典>Redis数据类型-字典<i class="fas fa-angle-right fa-fw"></i></a></div></div><div class=comment><div id=valine></div><script>document.addEventListener("DOMContentLoaded",function(event){new Valine({el:'#valine',appId:'EVeKQGJoyzwUXAUhbwnrWRef-gzGzoHsz',appKey:'YMah0NIRauENVCUV8o5vhPMN',placeholder:'说点什么吧...',verify:true,avatar:'mm',pageSize:10,lang:'en',visitor:true,recordIP:true,});});</script><noscript>Please enable JavaScript to view the <a href=https://valine.js.org/>comments powered by Valine.</a></noscript></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line>由 <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> 强力驱动 | 主题 - <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer"><i class="far fa-heart fa-fw"></i>LoveIt</a></div><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2019 - 2020</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=/ target=_blank>shuaisenma</a></span>&nbsp;|&nbsp;<span class=license><a rel="license external nofollow noopener noreffer" href=https://creativecommons.org/licenses/by-nc/4.0/ target=_blank>CC BY-NC 4.0</a></span></div></div></footer></div><a href=# class="dynamic-to-top animated faster" id=dynamic-to-top><i class="fas fa-chevron-up fa-fw"></i></a><script>document.addEventListener('DOMContentLoaded',function(){lightGallery(document.getElementById('content'),{selector:'.lightgallery',speed:400,hideBarsDelay:2000,thumbnail:true,exThumbImage:'data-thumbnail',thumbWidth:80,thumbContHeight:80,});});</script><link rel=stylesheet href=/lib/valine/valine.css><link rel=stylesheet href=/lib/iconfont/iconfont.min.css><link rel=stylesheet href=/lib/lightgallery/lightgallery.min.css><script src=https://cdn.staticfile.org/valine/1.3.10/Valine.min.js></script><script src=https://cdn.staticfile.org/smooth-scroll/16.1.0/smooth-scroll.polyfills.min.js></script><script src=https://cdn.staticfile.org/lazysizes/5.2.0/lazysizes.min.js></script><script src=/lib/sharer/sharer.min.js></script><script src=/lib/lightgallery/lightgallery.min.js></script><script src=/lib/lightgallery/lg-thumbnail.min.js></script><script src=/lib/lightgallery/lg-zoom.min.js></script><script src=/js/theme.min.js></script><script type=application/javascript>var doNotTrack=false;if(!doNotTrack){window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;ga('create','UA-105751499-1','auto');ga('set','anonymizeIp',true);ga('send','pageview');}</script><script async src=https://www.google-analytics.com/analytics.js></script></body></html>
