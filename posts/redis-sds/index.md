@@ -1,4 +1,4 @@
-# ﻿Redis数据类型-简单动态字符串
+# ﻿Redis数据结构-简单动态字符串
 
 
 Sds （Simple Dynamic String，简单动态字符串）是 Redis 底层所使用的字符串表示， 几乎所有的 Redis 模块中都用了 sds。

@@ -1,4 +1,4 @@
-# Redis数据类型-字典
+# Redis数据结构-字典
 
 
 字典（dictionary）， 又名映射（map）或关联数组（associative array）是一种抽象数据结构， 由一集键值对（key-value pairs）组成。
