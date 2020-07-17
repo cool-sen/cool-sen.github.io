@@ -110,4 +110,4 @@ ziplist 由此有性能和内存空间的优势：
 
 ## 参考
 
-[Redis设计与实现](
+[Redis设计与实现](https://book.douban.com/subject/25900156/)
