@@ -133,4 +133,4 @@ https://3gods.com/kafka/Kafka-Message-Delivery-Semantics.html#sec-1
 
 http://bigdata-star.com/archives/1507
 
-**我的博客即将同步至腾讯云+社区，  邀请大家一同入驻：https://cloud.tencent.com/developer/support-plan?invite_code=2jqmbbj4xzaco**
+**我的博客即将同步至腾讯云+社区，邀请大家一同入驻：https://cloud.tencent.com/developer/support-plan?invite_code=2jqmbbj4xzaco**
